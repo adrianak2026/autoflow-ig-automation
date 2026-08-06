@@ -48,6 +48,35 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, name, triggerKeywords, replyTemplate, matchMode, isActive } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Campaign ID required for update" }, { status: 400 });
+    }
+
+    const [updated] = await db
+      .update(automationCampaigns)
+      .set({
+        ...(name && { name: String(name) }),
+        ...(triggerKeywords && { triggerKeywords: String(triggerKeywords) }),
+        ...(replyTemplate && { replyTemplate: String(replyTemplate) }),
+        ...(matchMode && { matchMode: matchMode === "word" ? "word" : "partial" }),
+        ...(typeof isActive === "boolean" && { isActive }),
+        updatedAt: new Date(),
+      })
+      .where(eq(automationCampaigns.id, Number(id)))
+      .returning();
+
+    return NextResponse.json({ success: true, campaign: updated });
+  } catch (err) {
+    console.error("Failed to update campaign:", err);
+    return NextResponse.json({ error: "Failed to update campaign" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -61,3 +90,4 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Failed to delete campaign" }, { status: 500 });
   }
 }
+

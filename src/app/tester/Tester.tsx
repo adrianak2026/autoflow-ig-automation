@@ -65,9 +65,43 @@ export default function Tester() {
   const [cName, setCName] = useState("");
   const [cKeywords, setCKeywords] = useState("majak,🔥,tool,link");
   const [cTemplate, setCTemplate] = useState("Hey {username}! Reel me bataya gaya tool link: https://yourwebsite.com/tool");
-
   const [cMatchMode, setCMatchMode] = useState<"partial" | "word">("partial");
   const [saving, setSaving] = useState(false);
+
+
+
+  // Edit State
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editKeywords, setEditKeywords] = useState("");
+  const [editTemplate, setEditTemplate] = useState("");
+
+  function startEdit(c: Campaign) {
+    setEditingId(c.id);
+    setEditName(c.name);
+    setEditKeywords(c.triggerKeywords);
+    setEditTemplate(c.replyTemplate);
+  }
+
+  async function handleSaveEdit(id: number) {
+    try {
+      await fetch("/api/campaigns", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id,
+          name: editName,
+          triggerKeywords: editKeywords,
+          replyTemplate: editTemplate,
+        }),
+      });
+      setEditingId(null);
+      loadCampaigns();
+    } catch {
+      /* noop */
+    }
+  }
+
 
   // Story DM Triggers State
   const [stories, setStories] = useState<StoryTrigger[]>([]);
@@ -208,6 +242,15 @@ export default function Tester() {
     }
   }
 
+  useEffect(() => {
+    loadCampaigns();
+    loadExtraFeatures();
+    loadHistory();
+    if (typeof window !== "undefined" && localStorage.getItem("autoflow_admin_token")) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoggingIn(true);
@@ -221,6 +264,7 @@ export default function Tester() {
       const data = await res.json();
       if (res.ok && data.success) {
         setIsAuthenticated(true);
+        localStorage.setItem("autoflow_admin_token", data.token);
       } else {
         setAuthError(data.error || "Invalid username or password");
       }
@@ -231,10 +275,15 @@ export default function Tester() {
     }
   }
 
+  function handleLogout() {
+    setIsAuthenticated(false);
+    localStorage.removeItem("autoflow_admin_token");
+  }
+
   return (
     <div className="space-y-6">
       {/* Admin Authentication Security Banner */}
-      {!isAuthenticated && (
+      {!isAuthenticated ? (
         <div className="rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-6 shadow-2xl backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -243,7 +292,7 @@ export default function Tester() {
                 <span className="font-mono text-xs font-bold uppercase tracking-wider">🔒 Protected Owner Workspace</span>
               </div>
               <h3 className="mt-1 text-lg font-extrabold text-white">Admin Credentials Verification Required</h3>
-              <p className="text-xs text-slate-400">Enter your Admin Secret Password to create, edit, or delete Reel rules & story triggers.</p>
+              <p className="text-xs text-slate-400">Enter your Admin Secret Password to create, edit, or delete Reel rules & story triggers directly in your browser.</p>
             </div>
 
             <form onSubmit={handleLogin} className="flex flex-wrap items-center gap-2">
@@ -268,13 +317,27 @@ export default function Tester() {
                 disabled={loggingIn}
                 className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg transition hover:bg-indigo-500 disabled:opacity-50"
               >
-                {loggingIn ? "Verifying..." : "🔑 Unlock Admin Access"}
+                {loggingIn ? "Verifying..." : "🔑 Unlock Browser Control"}
               </button>
             </form>
           </div>
           {authError && <p className="mt-2 text-xs font-bold text-rose-400">⚠️ {authError}</p>}
         </div>
+      ) : (
+        <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 backdrop-blur">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span>🔓 Admin Mode Active in Browser (Logged in as @{authUser})</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-300 hover:text-white"
+          >
+            🔒 Lock Session
+          </button>
+        </div>
       )}
+
 
       {/* Navigation Tabs */}
 
@@ -417,25 +480,81 @@ export default function Tester() {
               )}
               {campaigns.map((c) => (
                 <div key={c.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-white">{c.name}</h4>
-                    <button
-                      onClick={() => handleDeleteCampaign(c.id)}
-                      className="rounded-lg bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {c.triggerKeywords.split(",").map((kw, i) => (
-                      <span key={i} className="rounded-md bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-300 border border-indigo-500/20">
-                        {kw.trim()}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-xs italic text-slate-300 line-clamp-2">
-                    “{c.replyTemplate}”
-                  </p>
+                  {editingId === c.id ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Rename Rule</label>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Edit Keywords & Emojis</label>
+                        <input
+                          type="text"
+                          value={editKeywords}
+                          onChange={(e) => setEditKeywords(e.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-mono text-indigo-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Edit DM Message Link</label>
+                        <input
+                          type="text"
+                          value={editTemplate}
+                          onChange={(e) => setEditTemplate(e.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleSaveEdit(c.id)}
+                          className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-500"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="rounded-lg bg-slate-800 px-3 py-1 text-xs text-slate-300 hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white">{c.name}</h4>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => startEdit(c)}
+                            className="rounded-lg bg-indigo-500/10 px-2.5 py-1 text-[11px] font-semibold text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20"
+                          >
+                            ✏️ Edit / Rename
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCampaign(c.id)}
+                            className="rounded-lg bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {c.triggerKeywords.split(",").map((kw, i) => (
+                          <span key={i} className="rounded-md bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-300 border border-indigo-500/20">
+                            {kw.trim()}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-xs italic text-slate-300 line-clamp-2">
+                        “{c.replyTemplate}”
+                      </p>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
