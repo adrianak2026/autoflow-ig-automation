@@ -10,7 +10,8 @@
     "postinstall": "node -e \"const fs=require('fs'),cp=require('child_process'); if(fs.existsSync('worker/package.json')){ cp.execSync('npm install --prefix worker', {stdio:'inherit'}); }\"",
     "verify": "bash scripts/check.sh",
     "dashboard": "bash scripts/start.sh",
-    "worker:dev": "bash scripts/worker-dev.sh"
+    "worker:dev": "bash scripts/worker-dev.sh",
+    "deploy": "npx tsx scripts/deploy.ts"
   },
   "dependencies": {
     "dotenv": "17.3.1",
