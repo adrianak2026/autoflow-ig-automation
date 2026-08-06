@@ -38,15 +38,21 @@ export async function POST(req: Request) {
     ? renderTemplate(template, { username, keyword: matched })
     : null;
 
-  await db.insert(testRuns).values({
-    commentText,
-    username,
-    keywords,
-    matchMode,
-    matched: !!matched,
-    matchedKeyword: matched,
-    renderedMessage: rendered,
-  });
+  try {
+    if (process.env.DATABASE_URL) {
+      await db.insert(testRuns).values({
+        commentText,
+        username,
+        keywords,
+        matchMode,
+        matched: !!matched,
+        matchedKeyword: matched,
+        renderedMessage: rendered,
+      });
+    }
+  } catch (err) {
+    console.warn("Test match run DB log skipped:", err);
+  }
 
   return NextResponse.json({
     matched: !!matched,
@@ -56,12 +62,19 @@ export async function POST(req: Request) {
   });
 }
 
+
 export async function GET() {
-  await ensureNeonDbMigrated();
-  const rows = await db
-    .select()
-    .from(testRuns)
-    .orderBy(desc(testRuns.createdAt))
-    .limit(10);
-  return NextResponse.json({ rows });
+  try {
+    await ensureNeonDbMigrated();
+    const rows = await db
+      .select()
+      .from(testRuns)
+      .orderBy(desc(testRuns.createdAt))
+      .limit(10);
+    return NextResponse.json({ rows });
+  } catch (err) {
+    console.warn("Could not fetch testRuns history:", err);
+    return NextResponse.json({ rows: [] });
+  }
 }
+
