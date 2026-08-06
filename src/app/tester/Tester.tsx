@@ -53,11 +53,19 @@ type TestResult = {
 export default function Tester() {
   const [activeTab, setActiveTab] = useState<"builder" | "story" | "leads" | "tester">("builder");
 
+  // Admin Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authUser, setAuthUser] = useState("admin");
+  const [authPass, setAuthPass] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+
   // Campaign Builder State (Reels)
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [cName, setCName] = useState("");
   const [cKeywords, setCKeywords] = useState("majak,🔥,tool,link");
   const [cTemplate, setCTemplate] = useState("Hey {username}! Reel me bataya gaya tool link: https://yourwebsite.com/tool");
+
   const [cMatchMode, setCMatchMode] = useState<"partial" | "word">("partial");
   const [saving, setSaving] = useState(false);
 
@@ -200,9 +208,76 @@ export default function Tester() {
     }
   }
 
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoggingIn(true);
+    setAuthError("");
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: authUser, password: authPass }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+      } else {
+        setAuthError(data.error || "Invalid username or password");
+      }
+    } catch {
+      setAuthError("Login failed. Check server status.");
+    } finally {
+      setLoggingIn(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Admin Authentication Security Banner */}
+      {!isAuthenticated && (
+        <div className="rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-6 shadow-2xl backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-indigo-400">
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                <span className="font-mono text-xs font-bold uppercase tracking-wider">🔒 Protected Owner Workspace</span>
+              </div>
+              <h3 className="mt-1 text-lg font-extrabold text-white">Admin Credentials Verification Required</h3>
+              <p className="text-xs text-slate-400">Enter your Admin Secret Password to create, edit, or delete Reel rules & story triggers.</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={authUser}
+                onChange={(e) => setAuthUser(e.target.value)}
+                placeholder="Admin Username"
+                className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                required
+              />
+              <input
+                type="password"
+                value={authPass}
+                onChange={(e) => setAuthPass(e.target.value)}
+                placeholder="Secret Password"
+                className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                required
+              />
+              <button
+                type="submit"
+                disabled={loggingIn}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg transition hover:bg-indigo-500 disabled:opacity-50"
+              >
+                {loggingIn ? "Verifying..." : "🔑 Unlock Admin Access"}
+              </button>
+            </form>
+          </div>
+          {authError && <p className="mt-2 text-xs font-bold text-rose-400">⚠️ {authError}</p>}
+        </div>
+      )}
+
       {/* Navigation Tabs */}
+
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         <button
           onClick={() => setActiveTab("builder")}
