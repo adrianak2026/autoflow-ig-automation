@@ -13,6 +13,25 @@ type Campaign = {
   createdAt: string;
 };
 
+type StoryTrigger = {
+  id: number;
+  triggerName: string;
+  storyKeyword: string | null;
+  dmReplyTemplate: string;
+  ctaButtonUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
+type LeadSubscriber = {
+  id: number;
+  instagramUsername: string;
+  capturedEmail: string | null;
+  sourceCampaign: string | null;
+  engagementCount: number;
+  lastEngagedAt: string;
+};
+
 type TestRow = {
   id: number;
   commentText: string;
@@ -32,15 +51,26 @@ type TestResult = {
 };
 
 export default function Tester() {
-  const [activeTab, setActiveTab] = useState<"builder" | "tester">("builder");
+  const [activeTab, setActiveTab] = useState<"builder" | "story" | "leads" | "tester">("builder");
 
-  // Campaign Builder State
+  // Campaign Builder State (Reels)
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [cName, setCName] = useState("");
   const [cKeywords, setCKeywords] = useState("majak,🔥,tool,link");
   const [cTemplate, setCTemplate] = useState("Hey {username}! Reel me bataya gaya tool link: https://yourwebsite.com/tool");
   const [cMatchMode, setCMatchMode] = useState<"partial" | "word">("partial");
   const [saving, setSaving] = useState(false);
+
+  // Story DM Triggers State
+  const [stories, setStories] = useState<StoryTrigger[]>([]);
+  const [stName, setStName] = useState("");
+  const [stKeyword, setStKeyword] = useState("reward, discount, VIP");
+  const [stTemplate, setStTemplate] = useState("Thanks for tagging us in your Instagram Story! Here is your exclusive reward: https://yourwebsite.com/vip");
+  const [stCtaUrl, setStCtaUrl] = useState("https://yourwebsite.com/vip");
+  const [stSaving, setStSaving] = useState(false);
+
+  // Leads State
+  const [leads, setLeads] = useState<LeadSubscriber[]>([]);
 
   // Tester State
   const [commentText, setCommentText] = useState("Bhai majak mat kar 🔥 tool send kar");
@@ -64,6 +94,17 @@ export default function Tester() {
     }
   }
 
+  async function loadExtraFeatures() {
+    try {
+      const r = await fetch("/api/features");
+      const j = await r.json();
+      setStories(j.stories || []);
+      setLeads(j.leads || []);
+    } catch {
+      /* noop */
+    }
+  }
+
   async function loadHistory() {
     try {
       const r = await fetch("/api/test-match", { cache: "no-store" });
@@ -76,6 +117,7 @@ export default function Tester() {
 
   useEffect(() => {
     loadCampaigns();
+    loadExtraFeatures();
     loadHistory();
   }, []);
 
@@ -98,6 +140,29 @@ export default function Tester() {
       loadCampaigns();
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleCreateStoryTrigger(e: React.FormEvent) {
+    e.preventDefault();
+    if (!stName.trim() || !stTemplate.trim()) return;
+    setStSaving(true);
+    try {
+      await fetch("/api/features", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "create_story",
+          triggerName: stName,
+          storyKeyword: stKeyword,
+          dmReplyTemplate: stTemplate,
+          ctaButtonUrl: stCtaUrl,
+        }),
+      });
+      setStName("");
+      loadExtraFeatures();
+    } finally {
+      setStSaving(false);
     }
   }
 
@@ -138,25 +203,54 @@ export default function Tester() {
   return (
     <div className="space-y-6">
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         <button
           onClick={() => setActiveTab("builder")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
             activeTab === "builder"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
               : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
           }`}
         >
-          <span>🎬 Reel Campaign Manager</span>
-          <span className="rounded-full bg-indigo-400/20 px-2 py-0.5 text-xs text-indigo-300">
-            {campaigns.length} Active
+          <span>🎬 Reel Custom Rules</span>
+          <span className="rounded-full bg-indigo-400/20 px-2 py-0.5 text-[10px] text-indigo-300 font-bold">
+            {campaigns.length} Saved in Neon DB
           </span>
         </button>
+
+        <button
+          onClick={() => setActiveTab("story")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+            activeTab === "story"
+              ? "bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-600/30"
+              : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
+          }`}
+        >
+          <span>📸 Story Mention DM Auto-Reply</span>
+          <span className="rounded-full bg-fuchsia-400/20 px-2 py-0.5 text-[10px] text-fuchsia-300 font-bold">
+            {stories.length} Rules
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("leads")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+            activeTab === "leads"
+              ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30"
+              : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
+          }`}
+        >
+          <span>👥 Captured Leads DB</span>
+          <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] text-emerald-300 font-bold">
+            Neon DB
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab("tester")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
             activeTab === "tester"
-              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+              ? "bg-slate-700 text-white shadow-lg"
               : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
           }`}
         >
@@ -164,14 +258,19 @@ export default function Tester() {
         </button>
       </div>
 
-      {/* TAB 1: Reel Campaign Creator */}
+      {/* TAB 1: Reel Campaign Creator (Saved in Neon DB) */}
       {activeTab === "builder" && (
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Create Form */}
           <form onSubmit={handleCreateCampaign} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>➕ Add New Reel Auto DM Rule</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span>➕ Add New Reel Auto DM Rule</span>
+              </h3>
+              <span className="text-[10px] font-mono font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                Saves in Neon DB
+              </span>
+            </div>
             
             <div>
               <label className="block text-xs font-semibold uppercase text-slate-400">
@@ -225,19 +324,20 @@ export default function Tester() {
               disabled={saving}
               className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving Campaign..." : "🚀 Save Reel DM Automation Rule"}
+              {saving ? "Saving to Neon DB..." : "💾 Save Rule in Neon DB"}
             </button>
           </form>
 
-          {/* Active Campaigns List */}
+          {/* Active Campaigns Saved in Neon DB */}
           <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-              Active Reel Rules ({campaigns.length})
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+              <span>Active Reel Rules in Neon DB ({campaigns.length})</span>
+              <span className="text-[10px] text-indigo-400 font-mono">Table: automation_campaigns</span>
             </h3>
             <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
               {campaigns.length === 0 && (
                 <div className="rounded-xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">
-                  No custom Reel rules created yet. Fill the form to add unlimited triggers!
+                  No custom Reel rules created yet. Fill the form to add unlimited triggers to Neon DB!
                 </div>
               )}
               {campaigns.map((c) => (
@@ -268,7 +368,135 @@ export default function Tester() {
         </div>
       )}
 
-      {/* TAB 2: Live Tester */}
+      {/* TAB 2: Story Mention DM Auto-Reply Rules */}
+      {activeTab === "story" && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <form onSubmit={handleCreateStoryTrigger} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white">📸 Add Story Mention Reward Rule</h3>
+              <span className="text-[10px] font-mono font-bold text-fuchsia-400 border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 rounded-full">
+                Story Auto-DM
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase text-slate-400">Trigger Rule Name</label>
+              <input
+                type="text"
+                value={stName}
+                onChange={(e) => setStName(e.target.value)}
+                placeholder="e.g. VIP Story Tag Reward"
+                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white focus:border-fuchsia-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase text-slate-400">DM Reward Message</label>
+              <textarea
+                rows={3}
+                value={stTemplate}
+                onChange={(e) => setStTemplate(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white focus:border-fuchsia-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase text-slate-400">CTA Link Button URL</label>
+              <input
+                type="url"
+                value={stCtaUrl}
+                onChange={(e) => setStCtaUrl(e.target.value)}
+                placeholder="https://yourwebsite.com/reward"
+                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white focus:border-fuchsia-500 focus:outline-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={stSaving}
+              className="w-full rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50"
+            >
+              {stSaving ? "Saving to Neon DB..." : "💾 Save Story Rule in Neon DB"}
+            </button>
+          </form>
+
+          <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+              <span>Story Mention Rules in Neon DB ({stories.length})</span>
+              <span className="text-[10px] text-fuchsia-400 font-mono">Table: story_triggers</span>
+            </h3>
+            <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+              {stories.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">
+                  No Story mention rules created yet. Anyone tagging you in Stories gets instant DM rewards!
+                </div>
+              )}
+              {stories.map((s) => (
+                <div key={s.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <h4 className="text-sm font-bold text-white">{s.triggerName}</h4>
+                  <p className="mt-2 text-xs italic text-slate-300">“{s.dmReplyTemplate}”</p>
+                  {s.ctaButtonUrl && (
+                    <span className="mt-2 inline-block text-[11px] text-fuchsia-300 underline font-mono">
+                      CTA: {s.ctaButtonUrl}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: Captured Leads DB */}
+      {activeTab === "leads" && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h3 className="text-base font-bold text-white">👥 Auto-Captured Leads & Subscribers</h3>
+              <p className="text-xs text-slate-400">Automated Instagram users & engagement history logged in Neon Postgres DB.</p>
+            </div>
+            <span className="text-xs font-mono text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 rounded-full font-bold">
+              Neon DB Table: lead_subscribers
+            </span>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-800 text-slate-400 uppercase font-mono">
+                <tr>
+                  <th className="py-3 px-4">IG Username</th>
+                  <th className="py-3 px-4">Captured Email</th>
+                  <th className="py-3 px-4">Source Reel Campaign</th>
+                  <th className="py-3 px-4">Engagements</th>
+                  <th className="py-3 px-4">Last Engaged</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800 text-slate-300">
+                {leads.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                      No leads captured yet. As users comment on Reels, their info gets logged into Neon DB automatically!
+                    </td>
+                  </tr>
+                )}
+                {leads.map((l) => (
+                  <tr key={l.id} className="hover:bg-slate-800/40">
+                    <td className="py-3 px-4 font-bold text-white">@{l.instagramUsername}</td>
+                    <td className="py-3 px-4 text-indigo-300 font-mono">{l.capturedEmail || "—"}</td>
+                    <td className="py-3 px-4">{l.sourceCampaign || "Reel Comment Auto DM"}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-emerald-400">{l.engagementCount}x</td>
+                    <td className="py-3 px-4 text-slate-400">{new Date(l.lastEngagedAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: Live Tester */}
       {activeTab === "tester" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-sm">
