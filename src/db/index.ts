@@ -3,11 +3,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 import path from "node:path";
 
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
-}
+const databaseUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:5432/placeholder";
 
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
@@ -32,6 +28,7 @@ export const db = drizzle(pool);
  * and applied to Neon DB before any API route or DB query executes.
  */
 export async function ensureNeonDbMigrated() {
+  if (!process.env.DATABASE_URL) return;
   if (globalForDb.__neonMigrationRan) return;
   try {
     const migrationsFolder = path.join(process.cwd(), "drizzle");

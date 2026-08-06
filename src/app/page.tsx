@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import Link from "next/link";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import Tester from "./tester/Tester";
@@ -141,114 +140,41 @@ export default async function HomePage() {
           </div>
         </section>
 
-                  <code>IG_ACCESS_TOKEN</code>.
-                </li>
-                <li>
-                  For signature verification, copy your App&apos;s secret into{" "}
-                  <code>WEBHOOK_APP_SECRET</code>.
-                </li>
-              </ol>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">Environment variables</h3>
-            <div className="mt-3 overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                    <th className="py-2 pr-4">Name</th>
-                    <th className="py-2 pr-4">Kind</th>
-                    <th className="py-2">Purpose</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">VERIFY_TOKEN</td>
-                    <td className="py-2 pr-4">secret</td>
-                    <td className="py-2">Meta webhook verification token.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">IG_ACCESS_TOKEN</td>
-                    <td className="py-2 pr-4">secret</td>
-                    <td className="py-2">Long-lived Page/IG token for Graph API calls.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">WEBHOOK_APP_SECRET</td>
-                    <td className="py-2 pr-4">secret</td>
-                    <td className="py-2">Meta App secret — used to verify X-Hub-Signature-256.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">DATABASE_URL</td>
-                    <td className="py-2 pr-4">secret (Next.js)</td>
-                    <td className="py-2">Postgres connection string for the dashboard (NOT the worker).</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">KEYWORDS</td>
-                    <td className="py-2 pr-4">var</td>
-                    <td className="py-2">Comma-separated keywords — <code>link,info,price,buy,deal</code>.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">REPLY_TEMPLATE</td>
-                    <td className="py-2 pr-4">var</td>
-                    <td className="py-2">DM body with <code>{`{username}`}</code> / <code>{`{keyword}`}</code>.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">MATCH_MODE</td>
-                    <td className="py-2 pr-4">var</td>
-                    <td className="py-2"><code>partial</code> or <code>word</code>.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">IG_PAGE_ID</td>
-                    <td className="py-2 pr-4">var (optional)</td>
-                    <td className="py-2">Enables self-comment filtering.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">RATE_LIMIT_WINDOW_MS</td>
-                    <td className="py-2 pr-4">var</td>
-                    <td className="py-2">Rate-limit window (default 60000 ms).</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono">RATE_LIMIT_MAX_REQUESTS</td>
-                    <td className="py-2 pr-4">var</td>
-                    <td className="py-2">Max requests per IP per window (default 120).</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        {/* Tester */}
+        {/* Interactive Keyword Tester */}
         <section id="tester" className="space-y-4">
-          <h2 className="text-2xl font-bold text-slate-900">Interactive matcher tester</h2>
-          <p className="text-sm text-slate-600">
-            Runs the same matching + template logic as the Worker, then persists each run
-            to Postgres so you can audit what would have been sent.
-          </p>
-          <Tester />
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Interactive Keyword Matcher Tester</h2>
+              <p className="text-sm text-slate-400">Test how your Instagram post comments will trigger private DMs in real time.</p>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl backdrop-blur">
+            <Tester />
+          </div>
         </section>
 
-        {/* Worker code */}
-        <section id="worker" className="space-y-4">
-          <h2 className="text-2xl font-bold text-slate-900">worker/index.js</h2>
-          <p className="text-sm text-slate-600">
-            The complete hardened Worker — Zod + HMAC + KV rate-limit + compression +
-            security headers.
-          </p>
-          <pre className="max-h-[600px] overflow-auto rounded-2xl bg-slate-900 p-6 font-mono text-xs leading-relaxed text-slate-100 shadow-inner">
-            <code>{workerCode}</code>
-          </pre>
+        {/* Worker Code Inspector */}
+        <section id="worker" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Cloudflare Edge Worker Source</h2>
+            <span className="font-mono text-xs text-slate-400">worker/index.js</span>
+          </div>
 
-          <h2 className="pt-4 text-2xl font-bold text-slate-900">worker/wrangler.toml</h2>
-          <pre className="overflow-auto rounded-2xl bg-slate-900 p-6 font-mono text-xs leading-relaxed text-slate-100 shadow-inner">
-            <code>{wranglerToml}</code>
-          </pre>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-300">`worker/wrangler.toml`</p>
+              <pre className="max-h-96 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/80 p-4 font-mono text-xs text-slate-300">
+                {wranglerToml}
+              </pre>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-300">`worker/index.js`</p>
+              <pre className="max-h-96 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/80 p-4 font-mono text-xs text-slate-300">
+                {workerCode}
+              </pre>
+            </div>
+          </div>
         </section>
-
-        <footer className="border-t border-slate-200 pt-6 text-center text-xs text-slate-500">
-          KoshVerse · Cloudflare Workers (IG bot) + Next.js + Drizzle + Postgres.
-        </footer>
       </div>
     </main>
   );
