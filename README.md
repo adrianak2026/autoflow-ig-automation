@@ -1,91 +1,131 @@
 # AutoFlow IG — Instagram Comment & Story DM Automation SaaS Engine
 
-AutoFlow IG ek 100% Free Serverless **Instagram Comment & Story → DM Automation Engine** hai jo **Cloudflare Workers (Edge)** aur **Neon Postgres Database** par chalta hai.
+AutoFlow IG is an open-source, sub-50ms serverless **Instagram Comment & Story → Direct Message (DM) Automation SaaS platform** running on **Cloudflare Workers (Edge Engine)** and **Neon Postgres (Storage Core)** with type-safe **Drizzle ORM**.
 
 ---
 
-## 📘 Complete Step-by-Step Setup Guide (HINDI & ENGLISH)
+## 🎨 System Flow & Architecture
 
-Aapko exact **3 cheezein** chahiye hongi:
-1. **Neon Database URL** (`DATABASE_URL`)
-2. **Meta Developer App Secrets** (`VERIFY_TOKEN`, `IG_ACCESS_TOKEN`, `WEBHOOK_APP_SECRET`)
-3. **Cloudflare Worker URL** (`https://autoflow-ig-worker.<your-subdomain>.workers.dev`)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Instagram User
+    participant Meta as Meta Graph API
+    participant Worker as Cloudflare Worker Edge
+    participant Neon as Neon Postgres DB
 
----
-
-### 🔹 STEP 1: Neon Database URL Kaise Milegi?
-
-1. Open [Neon Console](https://console.neon.tech).
-2. Apne Project par click karein aur **Connection Details** section me jayein.
-3. Node.js / Postgres connection string copy karein. Example:
-   `DATABASE_URL="postgresql://alex:pass@ep-cool-pool-123.us-east-2.aws.neon.tech/neondb?sslmode=require"`
-4. Apne local project me `.env` file banayein aur usme yeh URL daalein.
-
----
-
-### 🔹 STEP 2: Meta App Credentials Kaise Milenge?
-
-1. Open [Meta for Developers Console](https://developers.facebook.com/apps).
-2. Create App -> Select **Business** type.
-3. **Add Products**: Add **Instagram Graph API** and **Webhooks**.
-4. **VERIFY_TOKEN**: Koi bhi Secret Random Text likhein (e.g. `autoflow_secret_token_2026`).
-5. **WEBHOOK_APP_SECRET**: Meta App Dashboard -> **App Settings** -> **Basic** -> **App Secret** copy karein.
-6. **IG_ACCESS_TOKEN**: Meta App Dashboard -> **Tools** -> **Graph API Explorer**:
-   - Permissions select karein: `instagram_basic`, `instagram_manage_comments`, `instagram_manage_messages`, `pages_manage_metadata`, `pages_read_engagement`.
-   - **Generate Token** par click karein aur Long-lived Access Token copy karein.
+    User->>Meta: Comments "link" on Instagram Post
+    Meta->>Worker: POST /webhook (JSON + X-Hub-Signature-256)
+    Worker->>Worker: Verify HMAC Signature & Anti-Replay Timestamp
+    alt Security Checks Passed
+        Worker->>Worker: Match Keyword ("link")
+        Worker->>Meta: POST /private_replies (Sends Auto DM)
+        Worker->>Neon: Log Automation Event & Lead Info
+        Worker-->>Meta: 200 OK EVENT_RECEIVED
+    else Security Checks Failed
+        Worker-->>Meta: 403 Forbidden
+    end
+```
 
 ---
 
-### 🔹 STEP 3: Cloudflare Worker Secret & Deployment
+## 📘 Step-by-Step Production Configuration Guide
 
-Project directory me 1-click command chalayein:
+To launch AutoFlow IG, you need **4 environment variables**. Here is exactly where to get them, how they work, and real-world examples:
+
+---
+
+### 1️⃣ `DATABASE_URL` (Neon Postgres Connection String)
+
+- **What it is**: The connection string allowing the app to log leads, DM analytics, and story triggers in Neon Postgres.
+- **Direct Console Link**: [https://console.neon.tech](https://console.neon.tech)
+- **Where to find it**: 
+  1. Open [Neon Console](https://console.neon.tech).
+  2. Select your Project (or click **Create Project**).
+  3. Under **Dashboard / Connection Details**, copy the Node.js / Postgres connection string.
+- **Example Value**:
+  ```text
+  postgresql://alex_owner:npg_x7YZaB123@ep-cool-pool-a5123.us-east-2.aws.neon.tech/neondb?sslmode=require
+  ```
+
+---
+
+### 2️⃣ `VERIFY_TOKEN` (Webhook Security Key)
+
+- **What it is**: A custom secret token used by Meta to verify that your Cloudflare Worker endpoint belongs to you.
+- **Where to get it**: **You choose this yourself!** (No external site needed).
+- **Format**: Any plain text string, UUID, or JWT token.
+- **Example Values**:
+  ```text
+  autoflow_secret_token_2026
+  ```
+  or
+  ```text
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0
+  ```
+
+---
+
+### 3️⃣ `WEBHOOK_APP_SECRET` (Meta App HMAC Key)
+
+- **What it is**: Used by Cloudflare Worker to verify the `X-Hub-Signature-256` header on incoming webhooks to block hackers and fake requests.
+- **Direct Console Link**: [https://developers.facebook.com/apps](https://developers.facebook.com/apps)
+- **Where to find it**:
+  1. Open [Meta for Developers](https://developers.facebook.com/apps).
+  2. Select your App -> Go to **App Settings** -> **Basic**.
+  3. Click **Show** next to **App Secret** and copy the 32-character hex key.
+- **Example Value**:
+  ```text
+  a1b2c3d4e5f67890123456789abcdef0
+  ```
+
+---
+
+### 4️⃣ `IG_ACCESS_TOKEN` (Instagram Graph API Access Token)
+
+- **What it is**: The long-lived access token allowing Cloudflare Worker to call Meta Graph API `/private_replies` and send automated DMs.
+- **Direct Console Link**: [https://developers.facebook.com/tools/explorer](https://developers.facebook.com/tools/explorer)
+- **Where to find it**:
+  1. Open [Graph API Explorer](https://developers.facebook.com/tools/explorer).
+  2. Select your Meta App & User/Page.
+  3. Add the following permissions:
+     - `instagram_basic`
+     - `instagram_manage_comments`
+     - `instagram_manage_messages`
+     - `pages_manage_metadata`
+     - `pages_read_engagement`
+  4. Click **Generate Access Token** and extend it to a Long-Lived Token (60 Days / Never Expire).
+- **Example Value**:
+  ```text
+  EAABb...1234567890
+  ```
+
+---
+
+## ⚡ 1-Click Automated Deployment
+
+Once you have filled `.env` with the 4 keys above, run:
 
 ```bash
 npm run deploy
 ```
 
-Yeh command automatically:
-- Neon Database par Migration chalayegi.
-- Secrets Cloudflare Worker me store karegi.
-- Cloudflare Worker Webhook URL live publish karegi!
+This single command automatically:
+1. Applies Neon Postgres migrations (`npx drizzle-kit migrate`).
+2. Configures worker secrets (`VERIFY_TOKEN`, `IG_ACCESS_TOKEN`, `WEBHOOK_APP_SECRET`).
+3. Deploys the worker to Cloudflare Workers edge network (`npx wrangler deploy`).
 
 ---
 
-### 🔹 STEP 4: Instagram Webhook Link Karein
+## 🔗 Linking Webhooks in Meta Console
 
-1. Meta Developer App Console -> **Webhooks** section me jayein.
-2. Select **Instagram** from dropdown -> Click **Subscribe to this topic**.
-3. **Callback URL**: Apna Cloudflare Worker URL daalein (e.g. `https://autoflow-ig-worker.yourname.workers.dev/webhook`).
-4. **Verify Token**: Step 2 wala `VERIFY_TOKEN` daalein.
-5. **Subscription Fields**: Tick `comments` aur `story_insights`.
-
----
-
-## ⚡ Architecture Diagram
-
-```mermaid
-flowchart TD
-    IG((Instagram User)) -->|Comment / Story Mention| Meta[Meta Graph API Webhooks]
-    Meta -->|POST /webhook + HMAC Signature| Worker[AutoFlow IG Cloudflare Worker]
-    Worker -->|Security & Replay Verification| Security{Signature Valid?}
-    Security -->|Yes| Matcher[Keyword & AI Intent Engine]
-    Security -->|No| Reject[403 Forbidden]
-    Matcher -->|POST /private_replies| Meta
-    Worker -->|Persist Logs & Leads| Neon[Neon Postgres DB via Drizzle]
-```
-
----
-
-## 🔑 Environment Variables Format
-
-Apne `.env` file me yeh values daalein:
-
-```env
-DATABASE_URL="postgresql://username:password@ep-cool-pool-123.us-east-2.aws.neon.tech/neondb?sslmode=require"
-VERIFY_TOKEN="autoflow_secret_token_2026"
-IG_ACCESS_TOKEN="EAABb..."
-WEBHOOK_APP_SECRET="a1b2c3d4..."
-```
+1. Copy your live Cloudflare Worker URL generated by `npm run deploy`:
+   `https://autoflow-ig-worker.<your-subdomain>.workers.dev/webhook`
+2. Go to [Meta Developer Console](https://developers.facebook.com/apps) -> **Webhooks** -> Select **Instagram**.
+3. Click **Subscribe to this topic**:
+   - **Callback URL**: `https://autoflow-ig-worker.<your-subdomain>.workers.dev/webhook`
+   - **Verify Token**: Your exact `VERIFY_TOKEN` plain text value.
+4. Under subscription fields, check **`comments`** and **`messages`**.
 
 ---
 
