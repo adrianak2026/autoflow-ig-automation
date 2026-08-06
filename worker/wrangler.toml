@@ -1,0 +1,22 @@
+name = "autoflow-ig-worker"
+main = "index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Non-secret config lives here. Secrets (VERIFY_TOKEN, IG_ACCESS_TOKEN,
+# WEBHOOK_APP_SECRET, DATABASE_URL) go via `wrangler secret put ...`.
+[vars]
+KEYWORDS = "link,info,price,buy,deal"
+REPLY_TEMPLATE = "Hey {username}, here is your requested link: https://koshverse.in"
+MATCH_MODE = "partial"        # "partial" or "word"
+GRAPH_VERSION = "v19.0"
+RATE_LIMIT_WINDOW_MS = 60000  # 1 min
+RATE_LIMIT_MAX_REQUESTS = 120 # per source IP per window
+# IG_PAGE_ID = "1784xxxxxxxxxxx"   # optional, enables self-comment skipping
+
+# Edge cache + rate-limit counter store.
+# Create with: wrangler kv:namespace create KOSH_KV
+# Then paste the id below.
+[[kv_namespaces]]
+binding = "KOSH_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
