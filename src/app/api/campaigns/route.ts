@@ -2,23 +2,32 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { automationCampaigns } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { verifyAdminToken, unauthorizedResponse } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+const MAX_NAME_LEN = 200;
+const MAX_KEYWORDS_LEN = 1000;
+const MAX_TEMPLATE_LEN = 2000;
+
+export async function GET(req: Request) {
+  // GET is read-only — still require auth to protect lead data
+  if (!verifyAdminToken(req)) return unauthorizedResponse();
   try {
     const campaigns = await db
       .select()
       .from(automationCampaigns)
-      .orderBy(desc(automationCampaigns.createdAt));
+      .orderBy(desc(automationCampaigns.createdAt))
+      .limit(100);
     return NextResponse.json({ campaigns });
   } catch (err) {
-    console.warn("Could not fetch campaigns:", err);
+    console.warn("[CAMPAIGNS_GET]", err instanceof Error ? err.message : err);
     return NextResponse.json({ campaigns: [] });
   }
 }
 
 export async function POST(req: Request) {
+  if (!verifyAdminToken(req)) return unauthorizedResponse();
   try {
     const body = await req.json();
     const { name, triggerKeywords, replyTemplate, matchMode } = body;
@@ -30,12 +39,21 @@ export async function POST(req: Request) {
       );
     }
 
+    // Input length limits to prevent abuse
+    const safeName = String(name).slice(0, MAX_NAME_LEN).trim();
+    const safeKeywords = String(triggerKeywords).slice(0, MAX_KEYWORDS_LEN).trim();
+    const safeTemplate = String(replyTemplate).slice(0, MAX_TEMPLATE_LEN).trim();
+
+    if (!safeName || !safeKeywords || !safeTemplate) {
+      return NextResponse.json({ error: "Inputs must not be empty after trimming." }, { status: 400 });
+    }
+
     const [newCampaign] = await db
       .insert(automationCampaigns)
       .values({
-        name: String(name),
-        triggerKeywords: String(triggerKeywords),
-        replyTemplate: String(replyTemplate),
+        name: safeName,
+        triggerKeywords: safeKeywords,
+        replyTemplate: safeTemplate,
         matchMode: matchMode === "word" ? "word" : "partial",
         isActive: true,
       })
@@ -43,26 +61,27 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, campaign: newCampaign });
   } catch (err) {
-    console.error("Failed to create campaign:", err);
+    console.error("[CAMPAIGNS_POST]", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to create campaign" }, { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
+  if (!verifyAdminToken(req)) return unauthorizedResponse();
   try {
     const body = await req.json();
     const { id, name, triggerKeywords, replyTemplate, matchMode, isActive } = body;
 
-    if (!id) {
-      return NextResponse.json({ error: "Campaign ID required for update" }, { status: 400 });
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Valid campaign ID required for update" }, { status: 400 });
     }
 
     const [updated] = await db
       .update(automationCampaigns)
       .set({
-        ...(name && { name: String(name) }),
-        ...(triggerKeywords && { triggerKeywords: String(triggerKeywords) }),
-        ...(replyTemplate && { replyTemplate: String(replyTemplate) }),
+        ...(name && { name: String(name).slice(0, MAX_NAME_LEN).trim() }),
+        ...(triggerKeywords && { triggerKeywords: String(triggerKeywords).slice(0, MAX_KEYWORDS_LEN).trim() }),
+        ...(replyTemplate && { replyTemplate: String(replyTemplate).slice(0, MAX_TEMPLATE_LEN).trim() }),
         ...(matchMode && { matchMode: matchMode === "word" ? "word" : "partial" }),
         ...(typeof isActive === "boolean" && { isActive }),
         updatedAt: new Date(),
@@ -72,22 +91,24 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true, campaign: updated });
   } catch (err) {
-    console.error("Failed to update campaign:", err);
+    console.error("[CAMPAIGNS_PUT]", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to update campaign" }, { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
+  if (!verifyAdminToken(req)) return unauthorizedResponse();
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Valid numeric ID required" }, { status: 400 });
+    }
 
     await db.delete(automationCampaigns).where(eq(automationCampaigns.id, Number(id)));
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Failed to delete campaign:", err);
+    console.error("[CAMPAIGNS_DELETE]", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to delete campaign" }, { status: 500 });
   }
 }
-

@@ -87,7 +87,7 @@ export default function Tester() {
     try {
       await fetch("/api/campaigns", {
         method: "PUT",
-        headers: { "content-type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           id,
           name: editName,
@@ -126,9 +126,17 @@ export default function Tester() {
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<TestRow[]>([]);
 
+  function getAuthHeaders(): HeadersInit {
+    const token = typeof window !== "undefined" ? localStorage.getItem("autoflow_admin_token") : null;
+    return {
+      "content-type": "application/json",
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    };
+  }
+
   async function loadCampaigns() {
     try {
-      const r = await fetch("/api/campaigns");
+      const r = await fetch("/api/campaigns", { headers: getAuthHeaders() });
       const j = await r.json();
       setCampaigns(j.campaigns || []);
     } catch {
@@ -138,7 +146,7 @@ export default function Tester() {
 
   async function loadExtraFeatures() {
     try {
-      const r = await fetch("/api/features");
+      const r = await fetch("/api/features", { headers: getAuthHeaders() });
       const j = await r.json();
       setStories(j.stories || []);
       setLeads(j.leads || []);
@@ -170,7 +178,7 @@ export default function Tester() {
     try {
       await fetch("/api/campaigns", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: cName,
           triggerKeywords: cKeywords,
@@ -192,7 +200,7 @@ export default function Tester() {
     try {
       await fetch("/api/features", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "create_story",
           triggerName: stName,
@@ -209,8 +217,9 @@ export default function Tester() {
   }
 
   async function handleDeleteCampaign(id: number) {
+    if (!window.confirm("Are you sure you want to delete this rule? This cannot be undone.")) return;
     try {
-      await fetch(`/api/campaigns?id=${id}`, { method: "DELETE" });
+      await fetch(`/api/campaigns?id=${id}`, { method: "DELETE", headers: getAuthHeaders() });
       loadCampaigns();
     } catch {
       /* noop */
