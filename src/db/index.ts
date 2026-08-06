@@ -19,3 +19,9 @@ if (process.env.NODE_ENV !== "production") {
 
 export const db = drizzle({ client: pool });
 
+export async function ensureNeonDbMigrated() {
+  // No-op helper for serverless HTTP mode
+  return Promise.resolve();
+}
+
+
