@@ -17,6 +17,6 @@ RATE_LIMIT_MAX_REQUESTS = 120 # per source IP per window
 # Edge cache + rate-limit counter store.
 # Create with: wrangler kv:namespace create KOSH_KV
 # Then paste the id below.
-[[kv_namespaces]]
-binding = "KOSH_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+# [[kv_namespaces]]
+# binding = "KOSH_KV"
+# id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
