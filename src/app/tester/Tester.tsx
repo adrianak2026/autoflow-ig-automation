@@ -66,8 +66,8 @@ export default function Tester() {
   // Campaign Builder State (Reels)
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [cName, setCName] = useState("");
-  const [cKeywords, setCKeywords] = useState("majak,🔥,tool,link");
-  const [cTemplate, setCTemplate] = useState("Hey {username}! Reel me bataya gaya tool link: https://yourwebsite.com/tool");
+  const [cKeywords, setCKeywords] = useState("");
+  const [cTemplate, setCTemplate] = useState("");
   const [cMatchMode, setCMatchMode] = useState<"partial" | "word" | "any">("partial");
   const [cReelUrl, setCReelUrl] = useState("");
   const [cReelMediaId, setCReelMediaId] = useState("");
@@ -161,9 +161,9 @@ export default function Tester() {
   // Story DM Triggers State
   const [stories, setStories] = useState<StoryTrigger[]>([]);
   const [stName, setStName] = useState("");
-  const [stKeyword, setStKeyword] = useState("reward, discount, VIP");
-  const [stTemplate, setStTemplate] = useState("Thanks for tagging us in your Instagram Story! Here is your exclusive reward: https://yourwebsite.com/vip");
-  const [stCtaUrl, setStCtaUrl] = useState("https://yourwebsite.com/vip");
+  const [stKeyword, setStKeyword] = useState("");
+  const [stTemplate, setStTemplate] = useState("");
+  const [stCtaUrl, setStCtaUrl] = useState("");
   const [stSaving, setStSaving] = useState(false);
 
   // Leads State
@@ -171,13 +171,11 @@ export default function Tester() {
   const [leadSearch, setLeadSearch] = useState("");
 
   // Tester State
-  const [commentText, setCommentText] = useState("Bhai majak mat kar 🔥 tool send kar");
-  const [username, setUsername] = useState("alex");
-  const [keywords, setKeywords] = useState("majak,🔥,tool,link");
+  const [commentText, setCommentText] = useState("");
+  const [username, setUsername] = useState("");
+  const [keywords, setKeywords] = useState("");
   const [matchMode, setMatchMode] = useState<"partial" | "word">("partial");
-  const [template, setTemplate] = useState(
-    "Hey {username}, here is your requested link: https://yourwebsite.com/tool",
-  );
+  const [template, setTemplate] = useState("");
   const [result, setResult] = useState<TestResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<TestRow[]>([]);

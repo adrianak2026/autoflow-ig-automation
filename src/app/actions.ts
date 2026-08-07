@@ -24,14 +24,7 @@ export async function seedInitialAdmin() {
   const ownerId = adminUser?.id ?? existing?.id ?? null;
 
   if (ownerId) {
-    await db.insert(automationCampaigns).values({
-      name: "Default IG Link Trigger",
-      triggerKeywords: "link,info,price,buy,deal",
-      replyTemplate: "Hey {username}, here is your requested link: https://autoflow.ig",
-      matchMode: "partial",
-      isActive: true,
-      ownerId,
-    });
+    // Demo campaign seed removed for production grade safety
   }
 
   return { ok: true };
