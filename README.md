@@ -34,17 +34,18 @@ When you click this button, Cloudflare will automatically:
 3. Ask you for the required Secrets (e.g., `META_APP_SECRET`, `PAGE_ACCESS_TOKEN`, `IG_PAGE_ID`). *If you don't have them yet, you can leave them blank and add them later in Cloudflare Settings!*
 4. Deploy the backend and give you a Webhook URL!
 
-### Step 2: Deploy Frontend & Database
-<div align="center">
+### Step 2: Deploy Frontend & Database (Cloudflare Pages)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SudhirDevOps1/serverless-instagram-dm-automation)
+Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**.
 
-</div>
-
-When you click this button, Vercel will:
-1. Ask you for your **`DATABASE_URL`** (from Neon Postgres) and an **`ADMIN_SECRET_TOKEN`** (your custom password).
-2. Deploy the Admin Dashboard.
-3. **Important:** After it is deployed, open your new dashboard URL, go to the **"⚙️ Settings & AI"** tab, and click the **"🚀 Initialize Database Tables"** button to finish your setup!
+1. Go to your Cloudflare Dashboard -> **Workers & Pages** -> **Overview**.
+2. Click **Create Application** -> **Pages** -> **Connect to Git** and select your repository.
+3. Framework preset: **`Next.js`** | Build command: **`npm run build`**.
+4. In **Environment variables (advanced)** add:
+   * **`DATABASE_URL`** (from Neon Postgres)
+   * **`ADMIN_SECRET_TOKEN`** (your custom password)
+5. Click **Save and Deploy**.
+6. **Important:** After it is deployed, open your new dashboard URL, go to the **"⚙️ Settings & AI"** tab, and click the **"🚀 Initialize Database Tables"** button to finish your setup!
 
 ---
 

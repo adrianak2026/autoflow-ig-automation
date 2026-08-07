@@ -81,7 +81,7 @@ Before finishing the deployment, scroll down to **Environment variables (advance
 
 ## 💻 Step 5: How to Deploy the Frontend (Admin Dashboard)
 
-Your frontend is already deployed along with the backend on Cloudflare Pages (or you can use Vercel). 
+Your frontend is already deployed along with the backend on Cloudflare Pages.
 **Now we need to set up the Database.**
 
 **Initialize the Database (1-Click):**
