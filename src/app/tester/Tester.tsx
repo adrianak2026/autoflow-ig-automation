@@ -539,7 +539,7 @@ export default function Tester() {
               : "text-slate-400 hover:bg-white/5 hover:text-white"
           }`}
         >
-          <span>🤖 AI Config</span>
+          <span>🤖 Settings & AI</span>
         </button>
       </div>
 
@@ -1150,7 +1150,7 @@ export default function Tester() {
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 shadow-sm backdrop-blur">
           <div className="mb-6 border-b border-amber-500/20 pb-4">
             <h3 className="text-xl font-bold text-amber-400 flex items-center gap-2">
-              <span>🤖 AI Auto-Reply Configuration</span>
+              <span>⚙️ System Settings & AI Config</span>
             </h3>
             <p className="mt-1 text-sm text-slate-400">
               Generate dynamic, personalized human-like replies using any OpenAI-compatible AI API (OpenAI, Groq, Claude via proxy, etc.).
@@ -1253,6 +1253,47 @@ export default function Tester() {
               {aiSaving ? "Saving Configuration..." : "💾 Save AI Settings"}
             </button>
           </form>
+
+          {/* Database Setup Section */}
+          <div className="mt-8 border-t border-amber-500/20 pt-6">
+            <h3 className="text-xl font-bold text-emerald-400 flex items-center gap-2 mb-2">
+              <span>🚀 1-Click Database Setup</span>
+            </h3>
+            <p className="text-sm text-slate-400 mb-4">
+              Click this button to initialize your Neon database tables. You only need to do this once when setting up the app for the first time.
+            </p>
+            <button
+              onClick={async (e) => {
+                const btn = e.currentTarget;
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "Initializing...";
+                
+                try {
+                  const res = await fetch("/api/setup-db", {
+                    method: "POST",
+                    headers: {
+                      "Authorization": `Bearer ${token}`
+                    }
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    alert("Database tables created successfully!");
+                  } else {
+                    alert(data.error || "Failed to setup database.");
+                  }
+                } catch (error) {
+                  alert("An error occurred during database setup.");
+                } finally {
+                  btn.disabled = false;
+                  btn.innerHTML = originalText;
+                }
+              }}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-2.5 font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50"
+            >
+              <span>Initialize Database Tables</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

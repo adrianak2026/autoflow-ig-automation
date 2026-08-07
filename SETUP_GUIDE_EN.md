@@ -43,56 +43,53 @@ Go to [Neon.tech](https://neon.tech) and create a free Postgres database.
 
 ## ☁️ Step 4: How to Deploy on Cloudflare (Backend)
 
-We use **Cloudflare Workers** for the backend because they are free, serverless, and ultra-fast.
+We use **Cloudflare Workers** for the backend because they are free, serverless, and ultra-fast. 
+**You do not need a laptop to do this, everything can be done from your browser!**
 
 ### Prerequisites:
-1. Install `Node.js` on your computer.
-2. Open your Terminal/Command Prompt.
-3. Create a Cloudflare account (cloudflare.com).
+1. Create a free Cloudflare account (cloudflare.com).
+2. Create a free GitHub account (github.com) and fork this repository.
 
 ### Deployment Steps:
 
-**1. Go to the project folder:**
-```bash
-cd serverless-instagram-dm-automation
-```
-
-**2. Create a Cloudflare KV (Key-Value) Store:**
+**1. Create a Cloudflare KV (Key-Value) Store:**
 This is required for Spam Protection (Max 3 DMs/user) and Human Handoff (1-hour pause).
-```bash
-npx wrangler kv:namespace create "KOSH_KV"
-```
-*You will get an ID (e.g. `id = "123456789abc"`). Open `worker/wrangler.toml` and paste it under `[[kv_namespaces]]`.*
+- Go to your Cloudflare Dashboard -> **Storage & Databases** -> **KV**.
+- Click **Create a namespace** and name it `KOSH_KV`.
+- Save the **Namespace ID** you are given.
 
-**3. Set your Environment Variables (Secrets):**
-You must add your tokens safely to Cloudflare:
-```bash
-npx wrangler secret put META_APP_SECRET
-npx wrangler secret put PAGE_ACCESS_TOKEN
-npx wrangler secret put IG_PAGE_ID
-npx wrangler secret put DATABASE_URL
-npx wrangler secret put ADMIN_SECRET_TOKEN
-```
-*(The terminal will prompt you for the value one by one. Paste it and press Enter).*
+**2. Deploy the Worker via GitHub Integration:**
+- Go to your Cloudflare Dashboard -> **Workers & Pages** -> **Overview**.
+- Click **Create Application** -> **Pages** -> **Connect to Git**.
+- Select your forked `autoflow-ig-automation` repository.
+- Framework preset: Select `Next.js`.
+- Build command: `npm run build`
 
-**4. Deploy the Worker:**
-```bash
-npm run deploy:worker
-```
-*(After deployment, you'll get a URL like `https://my-worker.username.workers.dev`. Paste this URL in your Meta Dashboard as the Webhook URL).*
+**3. Set your Environment Variables (Secrets) in Cloudflare:**
+Before finishing the deployment, scroll down to **Environment variables (advanced)** and add:
+- `META_APP_SECRET`
+- `PAGE_ACCESS_TOKEN`
+- `IG_PAGE_ID`
+- `DATABASE_URL`
+- `ADMIN_SECRET_TOKEN`
+- Also, go to **KV Namespace Bindings** and bind `KOSH_KV` to the namespace you created in step 1.
+- Click **Save and Deploy**.
+
+*(After deployment, you'll get a URL like `https://my-app.pages.dev/api/webhook`. Paste this URL in your Meta Dashboard as the Webhook URL).*
 
 ---
 
 ## 💻 Step 5: How to Deploy the Frontend (Admin Dashboard)
 
-You can deploy the Next.js Frontend easily on **Vercel** or **Cloudflare Pages**.
+Your frontend is already deployed along with the backend on Cloudflare Pages (or you can use Vercel). 
+**Now we need to set up the Database.**
 
-**For Vercel:**
-1. Go to Vercel.com and connect your Github repository.
-2. In the deployment settings, add these Environment Variables:
-   - `DATABASE_URL` (Your Neon Postgres URL)
-   - `ADMIN_SECRET_TOKEN` (Your custom master password)
-3. Click **Deploy**.
+**Initialize the Database (1-Click):**
+1. Open your live Admin Dashboard website (e.g. `https://my-app.pages.dev`).
+2. Log in using the password you set as `ADMIN_SECRET_TOKEN`.
+3. Go to the **"⚙️ Settings & AI"** tab.
+4. Scroll down and click the big green **"🚀 Initialize Database Tables"** button.
+5. You'll get a popup saying it was successful. That's it, your database is ready!
 
 ---
 

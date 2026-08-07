@@ -43,56 +43,53 @@ Instagram ko bot ke saath jodne ke liye hume Meta for Developers (developers.fac
 
 ## ☁️ Step 4: Cloudflare par Deploy Kaise Karein? (Backend)
 
-Cloudflare par hum **Cloudflare Workers** ka use karte hain. Ye free aur ultra-fast hote hain.
+Cloudflare par hum **Cloudflare Workers / Pages** ka use karte hain. Ye free aur ultra-fast hote hain.
+**Sabse achhi baat: Isey aap bina laptop ke, sirf apne mobile browser se bhi kar sakte hain!**
 
 ### Prerequisites (Kya kya chahiye):
-1. Apne computer me `Node.js` install karein.
-2. Terminal/Command Prompt open karein.
-3. Apna Cloudflare account banayein (cloudflare.com).
+1. Apna ek free Cloudflare account banayein (cloudflare.com).
+2. Apna ek free GitHub account banayein (github.com) aur is repository ko **Fork** karein.
 
 ### Deployment Process:
 
-**1. Project folder me jayein:**
-```bash
-cd serverless-instagram-dm-automation
-```
-
-**2. Cloudflare KV (Key-Value) Store banayein:**
+**1. Cloudflare KV (Key-Value) Store banayein:**
 Ye Spam Protection aur "1-Hour Human Handoff Pause" ke liye zaruri hai.
-```bash
-npx wrangler kv:namespace create "KOSH_KV"
-```
-*Is command se ek ID milegi (jaise `id = "123456789abc"`). Ise apne `worker/wrangler.toml` file me `[[kv_namespaces]]` ke andar paste kar dein.*
+- Apne Cloudflare Dashboard me jayein -> **Storage & Databases** -> **KV**.
+- **Create a namespace** par click karein aur naam dein `KOSH_KV`.
+- Jo **Namespace ID** aayegi, usey copy kar lein.
 
-**3. Saare Environment Variables (Keys) set karein:**
-Aapko Cloudflare Worker me apne tokens daalne honge taaki wo safely store ho jayein:
-```bash
-npx wrangler secret put META_APP_SECRET
-npx wrangler secret put PAGE_ACCESS_TOKEN
-npx wrangler secret put IG_PAGE_ID
-npx wrangler secret put DATABASE_URL
-npx wrangler secret put ADMIN_SECRET_TOKEN
-```
-*(Terminal aapse ek-ek karke inki values puchega, wahan paste karke Enter dabayein)*
+**2. GitHub ke zarie Deploy karein:**
+- Cloudflare Dashboard me wapas jayein -> **Workers & Pages** -> **Overview**.
+- **Create Application** -> **Pages** -> **Connect to Git** par click karein.
+- Apna forked `autoflow-ig-automation` repository select karein.
+- Framework preset me `Next.js` chunein.
+- Build command me `npm run build` likha hona chahiye.
 
-**4. Worker (Backend) Deploy karein:**
-```bash
-npm run deploy:worker
-```
-*(Deploy hone ke baad aapko ek link milega jaise `https://my-worker.username.workers.dev`. Ye link Meta Dashboard me Webhook URL ki jagah dalna hoga).*
+**3. Apne Environment Variables (Keys) set karein:**
+Deployment khatam karne se pehle, neeche **Environment variables (advanced)** par click karein aur ye sab add karein:
+- `META_APP_SECRET`
+- `PAGE_ACCESS_TOKEN`
+- `IG_PAGE_ID`
+- `DATABASE_URL`
+- `ADMIN_SECRET_TOKEN`
+- Uske baad, **KV Namespace Bindings** me jaakar `KOSH_KV` select karein (jo Step 1 me banaya tha).
+- ab **Save and Deploy** par click karein.
+
+*(Deploy hone ke baad aapko ek link milega jaise `https://my-app.pages.dev/api/webhook`. Ye link Meta Dashboard me Webhook URL ki jagah dalna hoga).*
 
 ---
 
-## 💻 Step 5: Frontend (Admin Dashboard) Deploy Kaise Karein?
+## 💻 Step 5: Frontend (Admin Dashboard) ka Database Setup
 
-Aap ise **Vercel** ya **Cloudflare Pages** par deploy kar sakte hain.
+Aapki website backend ke saath hi Cloudflare Pages par deploy ho gayi hai. 
+**Ab bas hume database tables banani hain (1-Click me).**
 
-**Vercel ke liye:**
-1. Vercel.com par jayein aur apna Github repository connect karein.
-2. Deployment settings me jaakar ye 2 Environment Variables add karein:
-   - `DATABASE_URL` (Aapka Neon Postgres URL)
-   - `ADMIN_SECRET_TOKEN` (Jo password aapne Step 3 me socha tha)
-3. **Deploy** par click karein.
+**Initialize Database (1-Click):**
+1. Apni Admin Dashboard ki website open karein (jaise `https://my-app.pages.dev`).
+2. **Login** karein (Password wahi hoga jo aapne `ADMIN_SECRET_TOKEN` me rakha tha).
+3. **"⚙️ Settings & AI"** tab par jayein.
+4. Neeche scroll karein aur hare rang ke **"🚀 Initialize Database Tables"** button par click karein.
+5. Agar sab sahi raha to aapko "Success" ka notification aa jayega. Bas, aapka database ready hai!
 
 ---
 
