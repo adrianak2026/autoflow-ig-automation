@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { storyTriggers, leadSubscribers, igDmLogs } from "@/db/schema";
-import { desc, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { verifyAdminToken, unauthorizedResponse } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +59,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "triggerName and dmReplyTemplate are required" }, { status: 400 });
       }
 
-      // Validate CTA URL must be https://
       if (ctaButtonUrl && !isValidHttpsUrl(String(ctaButtonUrl))) {
         return NextResponse.json(
           { error: "ctaButtonUrl must be a valid https:// URL" },
@@ -85,5 +84,29 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[FEATURES_POST]", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  if (!verifyAdminToken(req)) return unauthorizedResponse();
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const type = searchParams.get("type") || "story";
+
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Valid numeric ID required" }, { status: 400 });
+    }
+
+    if (type === "story") {
+      await db.delete(storyTriggers).where(eq(storyTriggers.id, Number(id)));
+    } else {
+      return NextResponse.json({ error: "Unknown type" }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[FEATURES_DELETE]", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }

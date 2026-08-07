@@ -1,7 +1,7 @@
 // Mirror of the Worker's keyword matcher — kept in sync so the dashboard
 // tester behaves identically to production.
 
-export type MatchMode = "partial" | "word";
+export type MatchMode = "partial" | "word" | "any";
 
 export function parseKeywords(raw: string): string[] {
   return raw
@@ -19,6 +19,9 @@ export function matchKeyword(
   keywordsCsv: string,
   mode: MatchMode = "partial",
 ): string | null {
+  // "any" mode — every comment triggers a DM, no keyword check needed
+  if (mode === "any") return "__any__";
+
   const haystack = String(text || "").toLowerCase();
   const keywords = parseKeywords(keywordsCsv);
   for (const kw of keywords) {

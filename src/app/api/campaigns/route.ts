@@ -9,6 +9,13 @@ export const dynamic = "force-dynamic";
 const MAX_NAME_LEN = 200;
 const MAX_KEYWORDS_LEN = 1000;
 const MAX_TEMPLATE_LEN = 2000;
+const MAX_URL_LEN = 500;
+
+function sanitizeMatchMode(m: unknown): "partial" | "word" | "any" {
+  if (m === "word") return "word";
+  if (m === "any") return "any";
+  return "partial";
+}
 
 export async function GET(req: Request) {
   // GET is read-only — still require auth to protect lead data
@@ -54,7 +61,8 @@ export async function POST(req: Request) {
         name: safeName,
         triggerKeywords: safeKeywords,
         replyTemplate: safeTemplate,
-        matchMode: matchMode === "word" ? "word" : "partial",
+        matchMode: sanitizeMatchMode(matchMode),
+        reelUrl: body.reelUrl ? String(body.reelUrl).slice(0, MAX_URL_LEN).trim() : null,
         isActive: true,
       })
       .returning();
@@ -82,8 +90,9 @@ export async function PUT(req: Request) {
         ...(name && { name: String(name).slice(0, MAX_NAME_LEN).trim() }),
         ...(triggerKeywords && { triggerKeywords: String(triggerKeywords).slice(0, MAX_KEYWORDS_LEN).trim() }),
         ...(replyTemplate && { replyTemplate: String(replyTemplate).slice(0, MAX_TEMPLATE_LEN).trim() }),
-        ...(matchMode && { matchMode: matchMode === "word" ? "word" : "partial" }),
+        ...(matchMode && { matchMode: sanitizeMatchMode(matchMode) }),
         ...(typeof isActive === "boolean" && { isActive }),
+        ...("reelUrl" in body && { reelUrl: body.reelUrl ? String(body.reelUrl).slice(0, MAX_URL_LEN).trim() : null }),
         updatedAt: new Date(),
       })
       .where(eq(automationCampaigns.id, Number(id)))

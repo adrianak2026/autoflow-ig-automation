@@ -40,7 +40,7 @@ export const byteaCompressedText = customType<{ data: string; driverData: Buffer
  * Rule 1: PostgreSQL ENUMs instead of repeated text strings
  * ------------------------------------------------------------------------- */
 export const userRoleEnum = pgEnum("user_role", ["admin", "user", "partner"]);
-export const matchModeEnum = pgEnum("match_mode", ["partial", "word"]);
+export const matchModeEnum = pgEnum("match_mode", ["partial", "word", "any"]);
 export const dmStatusEnum = pgEnum("dm_status", ["sent", "failed", "skipped"]);
 export const intentCategoryEnum = pgEnum("intent_category", [
   "pricing",
@@ -85,6 +85,7 @@ export const automationCampaigns = pgTable(
     replyTemplate: byteaCompressedText("reply_template").notNull(), // Rule 4: Zlib compressed
     matchMode: matchModeEnum("match_mode").notNull().default("partial"), // Rule 1: ENUM
     isActive: boolean("is_active").notNull().default(true),
+    reelUrl: text("reel_url"),                               // Instagram Reel/Post URL this rule applies to
     totalDmsSent: integer("total_dms_sent").notNull().default(0),
     totalComments: integer("total_comments").notNull().default(0),
     ownerId: uuid("owner_id").references(() => users.id),

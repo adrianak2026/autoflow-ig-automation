@@ -361,8 +361,11 @@ function getKeywords(env) {
 function matchKeyword(text, env) {
   const haystack = String(text || "").toLowerCase();
   const mode = (env.MATCH_MODE || DEFAULTS.MATCH_MODE).toLowerCase();
-  const keywords = getKeywords(env);
 
+  // "any" mode: every comment triggers a DM — no keyword matching needed
+  if (mode === "any") return "__any__";
+
+  const keywords = getKeywords(env);
   for (const kw of keywords) {
     if (mode === "word") {
       const re = new RegExp(

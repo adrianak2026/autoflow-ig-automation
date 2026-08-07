@@ -9,6 +9,7 @@ type Campaign = {
   replyTemplate: string;
   matchMode: string;
   isActive: boolean;
+  reelUrl: string | null;
   totalDmsSent: number;
   createdAt: string;
 };
@@ -65,9 +66,15 @@ export default function Tester() {
   const [cName, setCName] = useState("");
   const [cKeywords, setCKeywords] = useState("majak,🔥,tool,link");
   const [cTemplate, setCTemplate] = useState("Hey {username}! Reel me bataya gaya tool link: https://yourwebsite.com/tool");
-  const [cMatchMode, setCMatchMode] = useState<"partial" | "word">("partial");
+  const [cMatchMode, setCMatchMode] = useState<"partial" | "word" | "any">("partial");
+  const [cReelUrl, setCReelUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Search / Filter
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Copy feedback
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
 
   // Edit State
@@ -81,6 +88,41 @@ export default function Tester() {
     setEditName(c.name);
     setEditKeywords(c.triggerKeywords);
     setEditTemplate(c.replyTemplate);
+  }
+
+  async function handleToggleActive(c: Campaign) {
+    try {
+      await fetch("/api/campaigns", {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ id: c.id, isActive: !c.isActive }),
+      });
+      loadCampaigns();
+    } catch { /* noop */ }
+  }
+
+  async function handleDuplicate(c: Campaign) {
+    try {
+      await fetch("/api/campaigns", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          name: `${c.name} (Copy)`,
+          triggerKeywords: c.triggerKeywords,
+          replyTemplate: c.replyTemplate,
+          matchMode: c.matchMode,
+          reelUrl: c.reelUrl,
+        }),
+      });
+      loadCampaigns();
+    } catch { /* noop */ }
+  }
+
+  function handleCopyTemplate(c: Campaign) {
+    navigator.clipboard.writeText(c.replyTemplate).then(() => {
+      setCopiedId(c.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
   }
 
   async function handleSaveEdit(id: number) {
@@ -113,6 +155,7 @@ export default function Tester() {
 
   // Leads State
   const [leads, setLeads] = useState<LeadSubscriber[]>([]);
+  const [leadSearch, setLeadSearch] = useState("");
 
   // Tester State
   const [commentText, setCommentText] = useState("Bhai majak mat kar 🔥 tool send kar");
@@ -173,7 +216,8 @@ export default function Tester() {
 
   async function handleCreateCampaign(e: React.FormEvent) {
     e.preventDefault();
-    if (!cName.trim() || !cKeywords.trim() || !cTemplate.trim()) return;
+    if (!cName.trim() || !cTemplate.trim()) return;
+    if (cMatchMode !== "any" && !cKeywords.trim()) return;
     setSaving(true);
     try {
       await fetch("/api/campaigns", {
@@ -181,12 +225,14 @@ export default function Tester() {
         headers: getAuthHeaders(),
         body: JSON.stringify({
           name: cName,
-          triggerKeywords: cKeywords,
+          triggerKeywords: cMatchMode === "any" ? "*" : cKeywords,
           replyTemplate: cTemplate,
           matchMode: cMatchMode,
+          reelUrl: cReelUrl.trim() || null,
         }),
       });
       setCName("");
+      setCReelUrl("");
       loadCampaigns();
     } finally {
       setSaving(false);
@@ -407,169 +453,273 @@ export default function Tester() {
 
       {/* TAB 1: Reel Campaign Creator (Saved in Neon DB) */}
       {activeTab === "builder" && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Create Form */}
-          <form onSubmit={handleCreateCampaign} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span>➕ Add New Reel Auto DM Rule</span>
-              </h3>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                Saves in Neon DB
-              </span>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400">
-                Reel / Campaign Name
-              </label>
-              <input
-                type="text"
-                value={cName}
-                onChange={(e) => setCName(e.target.value)}
-                placeholder="e.g. AI Video Tool Reel #12"
-                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-                required
-              />
-            </div>
+        <div className="space-y-5">
 
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400">
-                Trigger Keywords & Emojis (Comma Separated)
-              </label>
-              <input
-                type="text"
-                value={cKeywords}
-                onChange={(e) => setCKeywords(e.target.value)}
-                placeholder="majak, 🔥, tool, link, ❤️, send"
-                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-mono text-indigo-300 focus:border-indigo-500 focus:outline-none"
-                required
-              />
-              <p className="mt-1 text-[11px] text-slate-400">
-                Put custom words or emojis (e.g. <code className="text-fuchsia-300">majak, 🔥, tool, link</code>). Anyone commenting these gets the DM.
-              </p>
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-center">
+              <div className="text-2xl font-black text-indigo-300">{campaigns.length}</div>
+              <div className="text-[10px] font-semibold uppercase text-slate-400 mt-0.5">Total Rules</div>
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400">
-                Auto DM Message & Dynamic Link
-              </label>
-              <textarea
-                rows={3}
-                value={cTemplate}
-                onChange={(e) => setCTemplate(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                required
-              />
-              <p className="mt-1 text-[11px] text-slate-400">
-                Use <code className="text-indigo-300">&#123;username&#125;</code> and <code className="text-indigo-300">&#123;keyword&#125;</code> variables.
-              </p>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+              <div className="text-2xl font-black text-emerald-300">{campaigns.filter(c => c.isActive).length}</div>
+              <div className="text-[10px] font-semibold uppercase text-slate-400 mt-0.5">Active Rules</div>
             </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
+              <div className="text-2xl font-black text-amber-300">{campaigns.filter(c => !c.isActive).length}</div>
+              <div className="text-[10px] font-semibold uppercase text-slate-400 mt-0.5">Paused</div>
+            </div>
+            <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-3 text-center">
+              <div className="text-2xl font-black text-fuchsia-300">{campaigns.filter(c => c.matchMode === "any").length}</div>
+              <div className="text-[10px] font-semibold uppercase text-slate-400 mt-0.5">Any-Comment Rules</div>
+            </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50"
-            >
-              {saving ? "Saving to Neon DB..." : "💾 Save Rule in Neon DB"}
-            </button>
-          </form>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Create Form */}
+            <form onSubmit={handleCreateCampaign} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-white">➕ Add New Reel Auto DM Rule</h3>
+                <span className="text-[10px] font-mono font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  Saves in Neon DB
+                </span>
+              </div>
 
-          {/* Active Campaigns Saved in Neon DB */}
-          <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-              <span>Active Reel Rules in Neon DB ({campaigns.length})</span>
-              <span className="text-[10px] text-indigo-400 font-mono">Table: automation_campaigns</span>
-            </h3>
-            <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
-              {campaigns.length === 0 && (
-                <div className="rounded-xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">
-                  No custom Reel rules created yet. Fill the form to add unlimited triggers to Neon DB!
+              {/* Reel URL — NEW */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-400">
+                  🎬 Instagram Reel / Post URL
+                </label>
+                <input
+                  type="url"
+                  value={cReelUrl}
+                  onChange={(e) => setCReelUrl(e.target.value)}
+                  placeholder="https://www.instagram.com/reel/ABC123xyz/"
+                  className="mt-1 w-full rounded-xl border border-indigo-500/30 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-slate-400">Paste your Reel link — for reference, not required.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-400">
+                  Reel / Campaign Name
+                </label>
+                <input
+                  type="text"
+                  value={cName}
+                  onChange={(e) => setCName(e.target.value)}
+                  placeholder="e.g. AI Video Tool Reel #12"
+                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              {/* Trigger Mode — NEW */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1.5">
+                  Trigger Mode
+                </label>
+                <div className="flex gap-2">
+                  {(["any", "partial", "word"] as const).map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setCMatchMode(m)}
+                      className={`flex-1 rounded-xl px-2 py-2 text-xs font-bold transition border ${
+                        cMatchMode === m
+                          ? m === "any"
+                            ? "bg-fuchsia-600 border-fuchsia-500 text-white shadow-lg shadow-fuchsia-600/20"
+                            : "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                          : "bg-slate-900 border-slate-700 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {m === "any" ? "🔄 Any Comment" : m === "partial" ? "🔍 Keyword" : "🎯 Exact Word"}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-slate-400">
+                  {cMatchMode === "any"
+                    ? "✅ Koi bhi comment karega → DM jaayegi. No keyword needed!"
+                    : cMatchMode === "partial"
+                    ? "Comment mein keyword kahin bhi aaye to match hoga. (Recommended)"
+                    : "Keyword comment mein exact alag word hona chahiye."}
+                </p>
+              </div>
+
+              {/* Keywords — hidden in any mode */}
+              {cMatchMode !== "any" && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-slate-400">
+                    Trigger Keywords &amp; Emojis (Comma Separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={cKeywords}
+                    onChange={(e) => setCKeywords(e.target.value)}
+                    placeholder="majak, 🔥, tool, link, ❤️, send"
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm font-mono text-indigo-300 focus:border-indigo-500 focus:outline-none"
+                    required
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Put custom words or emojis (e.g. <code className="text-fuchsia-300">majak, 🔥, tool, link</code>).
+                  </p>
                 </div>
               )}
-              {campaigns.map((c) => (
-                <div key={c.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                  {editingId === c.id ? (
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Rename Rule</label>
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
-                        />
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-400">
+                  Auto DM Message &amp; Dynamic Link
+                </label>
+                <textarea
+                  rows={3}
+                  value={cTemplate}
+                  onChange={(e) => setCTemplate(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  required
+                />
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Use <code className="text-indigo-300">&#123;username&#125;</code> and <code className="text-indigo-300">&#123;keyword&#125;</code> variables.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50"
+              >
+                {saving ? "Saving to Neon DB..." : "💾 Save Rule in Neon DB"}
+              </button>
+            </form>
+
+            {/* Campaign List */}
+            <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  Saved Rules ({campaigns.length})
+                </h3>
+                <button onClick={loadCampaigns} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] text-slate-400 hover:text-white transition">
+                  🔄 Refresh
+                </button>
+              </div>
+
+              {/* Search — NEW */}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="🔍 Search by name or keyword..."
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              />
+
+              <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                {campaigns.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">
+                    No custom Reel rules created yet. Fill the form to add unlimited triggers to Neon DB!
+                  </div>
+                )}
+                {campaigns
+                  .filter(c =>
+                    !searchQuery ||
+                    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    c.triggerKeywords.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((c) => (
+                  <div
+                    key={c.id}
+                    className={`rounded-xl border p-4 transition ${
+                      c.isActive
+                        ? "border-slate-800 bg-slate-950/70 hover:border-slate-700"
+                        : "border-slate-800/40 bg-slate-950/30 opacity-60"
+                    }`}
+                  >
+                    {editingId === c.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Rename Rule</label>
+                          <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Edit Keywords &amp; Emojis</label>
+                          <input type="text" value={editKeywords} onChange={(e) => setEditKeywords(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-mono text-indigo-300" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Edit DM Message</label>
+                          <input type="text" value={editTemplate} onChange={(e) => setEditTemplate(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleSaveEdit(c.id)} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-500">Save Changes</button>
+                          <button onClick={() => setEditingId(null)} className="rounded-lg bg-slate-800 px-3 py-1 text-xs text-slate-300 hover:text-white">Cancel</button>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Edit Keywords & Emojis</label>
-                        <input
-                          type="text"
-                          value={editKeywords}
-                          onChange={(e) => setEditKeywords(e.target.value)}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-mono text-indigo-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Edit DM Message Link</label>
-                        <input
-                          type="text"
-                          value={editTemplate}
-                          onChange={(e) => setEditTemplate(e.target.value)}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleSaveEdit(c.id)}
-                          className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-500"
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="rounded-lg bg-slate-800 px-3 py-1 text-xs text-slate-300 hover:text-white"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-bold text-white">{c.name}</h4>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => startEdit(c)}
-                            className="rounded-lg bg-indigo-500/10 px-2.5 py-1 text-[11px] font-semibold text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20"
-                          >
-                            ✏️ Edit / Rename
+                    ) : (
+                      <>
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-bold text-white truncate">{c.name}</h4>
+                              {c.matchMode === "any" && (
+                                <span className="rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 px-2 py-0.5 text-[10px] font-bold text-fuchsia-300">ANY COMMENT</span>
+                              )}
+                              <span className={`h-2 w-2 rounded-full flex-shrink-0 ${c.isActive ? "bg-emerald-400" : "bg-slate-600"}`} title={c.isActive ? "Active" : "Paused"} />
+                            </div>
+                            {c.reelUrl && (
+                              <a href={c.reelUrl} target="_blank" rel="noopener noreferrer"
+                                className="mt-1 inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2 font-mono">
+                                🎬 {c.reelUrl.replace("https://www.instagram.com/", "ig.com/").slice(0, 40)}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {c.matchMode !== "any" && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {c.triggerKeywords.split(",").map((kw, i) => (
+                              <span key={i} className="rounded-md bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-300 border border-indigo-500/20">
+                                {kw.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="mt-2 text-xs italic text-slate-300 line-clamp-2">"{c.replyTemplate}"</p>
+
+                        {/* Action buttons — NEW: toggle, copy, duplicate */}
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          <button onClick={() => handleToggleActive(c)}
+                            className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold border transition ${
+                              c.isActive
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                            }`}>
+                            {c.isActive ? "⏸ Pause" : "▶ Activate"}
                           </button>
-                          <button
-                            onClick={() => handleDeleteCampaign(c.id)}
-                            className="rounded-lg bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
-                          >
+                          <button onClick={() => startEdit(c)}
+                            className="rounded-lg bg-indigo-500/10 px-2.5 py-1 text-[11px] font-semibold text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20">
+                            ✏️ Edit
+                          </button>
+                          <button onClick={() => handleCopyTemplate(c)}
+                            className="rounded-lg bg-slate-700/40 px-2.5 py-1 text-[11px] font-semibold text-slate-300 border border-slate-600/40 hover:bg-slate-700">
+                            {copiedId === c.id ? "✅ Copied!" : "📋 Copy DM"}
+                          </button>
+                          <button onClick={() => handleDuplicate(c)}
+                            className="rounded-lg bg-slate-700/40 px-2.5 py-1 text-[11px] font-semibold text-slate-300 border border-slate-600/40 hover:bg-slate-700">
+                            🔁 Duplicate
+                          </button>
+                          <button onClick={() => handleDeleteCampaign(c.id)}
+                            className="rounded-lg bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 border border-rose-500/20 hover:bg-rose-500/20">
                             🗑️ Delete
                           </button>
                         </div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {c.triggerKeywords.split(",").map((kw, i) => (
-                          <span key={i} className="rounded-md bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-300 border border-indigo-500/20">
-                            {kw.trim()}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="mt-2 text-xs italic text-slate-300 line-clamp-2">
-                        “{c.replyTemplate}”
-                      </p>
-                    </>
-                  )}
-                </div>
-              ))}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
+
 
       {/* TAB 2: Story Mention DM Auto-Reply Rules */}
       {activeTab === "story" && (
@@ -638,12 +788,24 @@ export default function Tester() {
               )}
               {stories.map((s) => (
                 <div key={s.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-                  <h4 className="text-sm font-bold text-white">{s.triggerName}</h4>
-                  <p className="mt-2 text-xs italic text-slate-300">“{s.dmReplyTemplate}”</p>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-white">{s.triggerName}</h4>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("Delete this story trigger?")) return;
+                        await fetch(`/api/features?id=${s.id}&type=story`, { method: "DELETE", headers: getAuthHeaders() });
+                        loadExtraFeatures();
+                      }}
+                      className="rounded-lg bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs italic text-slate-300">"{s.dmReplyTemplate}"</p>
                   {s.ctaButtonUrl && (
-                    <span className="mt-2 inline-block text-[11px] text-fuchsia-300 underline font-mono">
+                    <a href={s.ctaButtonUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[11px] text-fuchsia-300 underline font-mono">
                       CTA: {s.ctaButtonUrl}
-                    </span>
+                    </a>
                   )}
                 </div>
               ))}
@@ -657,12 +819,38 @@ export default function Tester() {
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div>
-              <h3 className="text-base font-bold text-white">👥 Auto-Captured Leads & Subscribers</h3>
-              <p className="text-xs text-slate-400">Automated Instagram users & engagement history logged in Neon Postgres DB.</p>
+              <h3 className="text-base font-bold text-white">👥 Auto-Captured Leads &amp; Subscribers</h3>
+              <p className="text-xs text-slate-400">Automated Instagram users &amp; engagement history logged in Neon Postgres DB.</p>
             </div>
-            <span className="text-xs font-mono text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 rounded-full font-bold">
-              Neon DB Table: lead_subscribers
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const filtered = leads.filter(l => !leadSearch || l.instagramUsername.toLowerCase().includes(leadSearch.toLowerCase()));
+                  const csv = ["Username,Email,Campaign,Engagements,Last Engaged", ...filtered.map(l => `@${l.instagramUsername},${l.capturedEmail || ""},${l.sourceCampaign || "Reel Comment"},${l.engagementCount},${new Date(l.lastEngagedAt).toLocaleString()}`)].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url; a.download = "autoflow_leads.csv"; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20"
+              >
+                📥 Export CSV
+              </button>
+              <span className="text-xs font-mono text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 rounded-full font-bold">
+                Neon DB Table: lead_subscribers
+              </span>
+            </div>
+          </div>
+
+          {/* Lead Search */}
+          <div className="mt-3">
+            <input
+              type="text"
+              value={leadSearch}
+              onChange={e => setLeadSearch(e.target.value)}
+              placeholder="🔍 Search by username..."
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+            />
           </div>
 
           <div className="mt-4 overflow-x-auto">
@@ -684,7 +872,7 @@ export default function Tester() {
                     </td>
                   </tr>
                 )}
-                {leads.map((l) => (
+                {leads.filter(l => !leadSearch || l.instagramUsername.toLowerCase().includes(leadSearch.toLowerCase())).map((l) => (
                   <tr key={l.id} className="hover:bg-slate-800/40">
                     <td className="py-3 px-4 font-bold text-white">@{l.instagramUsername}</td>
                     <td className="py-3 px-4 text-indigo-300 font-mono">{l.capturedEmail || "—"}</td>
