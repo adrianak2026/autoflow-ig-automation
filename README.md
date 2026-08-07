@@ -139,13 +139,11 @@ Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**. (
 - **Search by username** — filter through large lead lists
 - **Build an Instagram lead list just like an email list**
 
-### 5.1 🔒 Soft Follow Gate (Require Follow)
-- **Problem Solved:** Want to grow followers before giving away the link?
-- **How it works:** When enabled, the bot replies to the comment with a "Gate" message containing two buttons: `[ Visit Profile ]` and `[ I'm following ✅ ]`. 
-- **Psychological Trigger:** The user feels compelled to follow, clicks "I'm following", and the worker instantly delivers the final link!
-
-> [!WARNING]  
-> **Note: This is a psychological trick (a "fake" check).** The Meta Graph API does *not* allow checking if a specific user follows you. The system relies entirely on the user clicking the "I'm following ✅" button to proceed.
+### 5.1 🔒 Honest Follow Gate (Require Follow)
+- **Problem Solved:** Want to grow followers before giving away the link, but without violating Meta Policies?
+- **How it works:** When enabled, the bot replies to the comment with a "Gate" message containing two buttons: `[ Visit Profile ]` and `[ Send Link ✅ ]`. 
+- **Honest & Polite:** The message politely asks: *"Hey! Thanks for the comment. Before I send the link, could you please follow the page? (We can't check automatically, but we trust you! 😊)"*
+- **100% Policy Compliant:** Because you are not deceiving the user with a fake technical check, this method prevents spam reports and keeps your Meta Developer account 100% safe from bans.
 
 ### 5.2 ⏳ 7-Day Smart Follow-ups (Cron Job)
 - The Cloudflare Worker automatically runs a daily cron job.

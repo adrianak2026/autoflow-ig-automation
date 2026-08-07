@@ -109,13 +109,10 @@ Ab aapko code me AI keys (OpenAI, Gemini) daalne ki zarurat nahi hai!
 
 ## 🌟 Step 7: Advanced Features (Naye Features)
 
-### 1. Soft Follow Gate (Require Follow First)
-- Ab aap chahein to user ko DM link dene se pehle Follow karne ke liye keh sakte hain!
+### 1. Honest Follow Gate (Require Follow First)
+- Ab aap Meta policies ka 100% palan karte hue, user ko DM link dene se pehle pyaar se Follow karne ke liye keh sakte hain!
 - **Kaise use karein:** Admin Dashboard mein, "Edit Rule" ke andar **"Require Follow First"** ka toggle chalu (ON) kar dein.
-- **Ye kaise kaam karta hai:** Jab user comment karta hai to bot use direct link ki jagah ek "Gate" message bhejta hai jisme do buttons hote hain: `[ Visit Profile ]` aur `[ I'm following ✅ ]`. Jaise hi user click karega "I'm following", use turant original DM mil jayega!
-
-> [!WARNING]  
-> **Note: Ye ek Psychological Trick ("fake" check) hai.** Meta Graph API directly kisi user ka follow status check karne ki permission nahi deta. Ye feature poori tarah se user ke "I'm following ✅" button dabane par nirbhar karta hai.
+- **Ye kaise kaam karta hai:** Jab user comment karta hai to bot use ek polite message bhejta hai: *"Hey! Thanks for the comment. Before I send the link, could you please follow the page? (We can't check automatically, but we trust you! 😊)"* jisme do buttons hote hain: `[ Visit Profile ]` aur `[ Send Link ✅ ]`. Jaise hi user "Send Link" click karega, use turant original DM mil jayega! Is tarike se aapka account ban hone se 100% bacha rahega.
 
 ### 2. Smart 7-Day Follow-ups (Cron Job)
 - System apne aap un logo ko follow-up bhejega jinhone pehle interact kiya tha.

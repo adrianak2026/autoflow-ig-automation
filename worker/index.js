@@ -448,7 +448,7 @@ async function handleEvent(request, env, ctx) {
                   template_type: "generic",
                   elements: [{
                      title: "Action Required",
-                     subtitle: `Hey ${username}! 🚀 To get the link, please make sure you follow me first!`,
+                     subtitle: `Hey ${username}! Thanks for commenting. Before I send the link, could you please follow the page? (We can't check automatically, but we trust you! 😊)`,
                      buttons: [
                         {
                            type: "web_url",
@@ -457,7 +457,7 @@ async function handleEvent(request, env, ctx) {
                         },
                         {
                            type: "postback",
-                           title: "I'm following ✅",
+                           title: "Send Link ✅",
                            payload: `FOLLOW_VERIFIED_${effectiveCampaignId}`
                         }
                      ]

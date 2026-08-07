@@ -109,13 +109,10 @@ You DO NOT need to put AI keys in the code anymore!
 
 ## 🌟 Step 7: Advanced Features
 
-### 1. Soft Follow Gate (Require Follow First)
-- You can now require users to follow you before they receive the final DM link.
+### 1. Honest Follow Gate (Require Follow First)
+- You can now politely ask users to follow you before they receive the final DM link, while staying 100% compliant with Meta policies.
 - **How to use:** In the Admin Dashboard, under "Edit Rule", turn on the **"Require Follow First"** toggle.
-- **How it works:** Instead of sending the direct link, the bot sends a psychological "Gate" message with two buttons: `[ Visit Profile ]` and `[ I'm following ✅ ]`. Once they click the second button, the bot instantly delivers the link!
-
-> [!WARNING]  
-> **Note: This is a psychological trick (a "fake" check).** The Meta Graph API does *not* allow checking if a specific user follows you. The system relies entirely on the user clicking the "I'm following ✅" button to proceed.
+- **How it works:** Instead of sending the direct link, the bot sends a polite message: *"Hey! Thanks for the comment. Before I send the link, could you please follow the page? (We can't check automatically, but we trust you! 😊)"* with two buttons: `[ Visit Profile ]` and `[ Send Link ✅ ]`. Once they click the second button, the bot instantly delivers the link!
 
 ### 2. Smart 7-Day Follow-ups (Cron Job)
 - The system automatically follows up with leads who haven't engaged further.
