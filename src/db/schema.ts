@@ -85,7 +85,8 @@ export const automationCampaigns = pgTable(
     replyTemplate: byteaCompressedText("reply_template").notNull(), // Rule 4: Zlib compressed
     matchMode: matchModeEnum("match_mode").notNull().default("partial"), // Rule 1: ENUM
     isActive: boolean("is_active").notNull().default(true),
-    reelUrl: text("reel_url"),                               // Instagram Reel/Post URL this rule applies to
+    reelUrl: text("reel_url"),                               // Instagram Reel/Post URL (for display)
+    reelMediaId: text("reel_media_id"),                      // Instagram numeric media ID for webhook matching
     totalDmsSent: integer("total_dms_sent").notNull().default(0),
     totalComments: integer("total_comments").notNull().default(0),
     ownerId: uuid("owner_id").references(() => users.id),

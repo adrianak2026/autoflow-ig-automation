@@ -13,7 +13,7 @@
  *   VERIFY_TOKEN        - random string Meta uses to verify your webhook URL
  *   IG_ACCESS_TOKEN     - long-lived Page/IG access token for Graph API calls
  *   WEBHOOK_APP_SECRET  - Meta App secret, used to verify X-Hub-Signature-256
- *   DATABASE_URL        - (optional) only used by the Next.js dashboard, NOT this worker
+ *   DATABASE_URL        - Neon Postgres URL — used by worker for per-reel campaign lookup
  *
  * KV namespace binding:
  *   KOSH_KV             - `wrangler kv:namespace create KOSH_KV`, paste id into wrangler.toml
@@ -44,7 +44,14 @@ const MetaWebhookPayloadSchema = z.object({
                       name: z.string().optional(),
                     })
                     .optional(),
-                  // Other comment fields are allowed but ignored.
+                  // media object — contains the reel/post ID this comment belongs to
+                  media: z
+                    .object({
+                      id: z.string().optional(),
+                    })
+                    .passthrough()
+                    .optional(),
+                  media_id: z.string().optional(), // some webhooks send this at top-level
                 })
                 .passthrough()
                 .optional(),
@@ -229,6 +236,10 @@ async function handleEvent(request, env, ctx) {
       const username =
         (value.from && (value.from.username || value.from.name)) || "there";
 
+      // Extract the media/reel ID this comment was posted on
+      // Meta sends it as value.media.id or value.media_id
+      const commentMediaId = (value.media && value.media.id) || value.media_id || null;
+
       if (!commentId || !text) {
         console.log("Skipping change without comment id/text.");
         continue;
@@ -240,7 +251,26 @@ async function handleEvent(request, env, ctx) {
         continue;
       }
 
-      const keyword = matchKeyword(text, env);
+      // ── Per-Reel Campaign Lookup from Neon DB ──────────────────────────────
+      // Try to find a campaign that matches this specific reel.
+      // Falls back to env-var globals if no DB URL or no matching campaign.
+      let resolvedCampaign = null;
+      if (env.DATABASE_URL && commentMediaId) {
+        resolvedCampaign = await findCampaignForMedia(env.DATABASE_URL, commentMediaId);
+        if (resolvedCampaign) {
+          console.log(`Per-reel campaign matched: "${resolvedCampaign.name}" for media ${commentMediaId}`);
+        } else {
+          console.log(`No specific campaign for media ${commentMediaId} — using global env defaults.`);
+        }
+      }
+
+      // Build the effective env-like object from DB campaign or global env vars
+      const effectiveKeywords = resolvedCampaign ? resolvedCampaign.trigger_keywords : (env.KEYWORDS || DEFAULTS.KEYWORDS);
+      const effectiveTemplate = resolvedCampaign ? resolvedCampaign.reply_template : (env.REPLY_TEMPLATE || DEFAULTS.REPLY_TEMPLATE);
+      const effectiveMode = resolvedCampaign ? resolvedCampaign.match_mode : (env.MATCH_MODE || DEFAULTS.MATCH_MODE);
+      const effectiveCampaignId = resolvedCampaign ? resolvedCampaign.id : null;
+
+      const keyword = matchKeywordDirect(text, effectiveKeywords, effectiveMode);
 
       // Log analytics event asynchronously (KV, no DB on the worker).
       ctx.waitUntil(
@@ -251,6 +281,8 @@ async function handleEvent(request, env, ctx) {
           text,
           matched: !!keyword,
           keyword,
+          mediaId: commentMediaId,
+          campaignId: effectiveCampaignId,
           clientIp,
         }),
       );
@@ -260,10 +292,7 @@ async function handleEvent(request, env, ctx) {
         continue;
       }
 
-      const message = renderTemplate(
-        env.REPLY_TEMPLATE || DEFAULTS.REPLY_TEMPLATE,
-        { username, keyword },
-      );
+      const message = renderTemplate(effectiveTemplate, { username, keyword });
 
       ctx.waitUntil(sendPrivateReply(commentId, message, env));
       ctx.waitUntil(
@@ -272,6 +301,8 @@ async function handleEvent(request, env, ctx) {
           commentId,
           username,
           keyword,
+          mediaId: commentMediaId,
+          campaignId: effectiveCampaignId,
           clientIp,
         }),
       );
@@ -280,6 +311,50 @@ async function handleEvent(request, env, ctx) {
 
   return respondWith(200, "EVENT_RECEIVED", { "content-type": "text/plain" });
 }
+
+/* ── Per-Reel DB lookup via Neon HTTP API ──────────────────────────────────
+ * Uses Neon's serverless HTTP API (no TCP — works in Cloudflare Workers).
+ * Finds the first active campaign whose reel_media_id matches the comment's media.
+ */
+async function findCampaignForMedia(databaseUrl, mediaId) {
+  try {
+    // Convert postgres:// URL to Neon HTTP endpoint
+    const pgUrl = new URL(databaseUrl);
+    const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
+
+    const query = `
+      SELECT id, name, trigger_keywords, reply_template, match_mode
+      FROM automation_campaigns
+      WHERE reel_media_id = $1
+        AND is_active = TRUE
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    const res = await fetch(neonHttpUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${pgUrl.password}`,
+      },
+      body: JSON.stringify({ query, params: [mediaId] }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("[DB lookup] Neon HTTP error:", res.status, err);
+      return null;
+    }
+
+    const data = await res.json();
+    const rows = data.rows || [];
+    return rows.length > 0 ? rows[0] : null;
+  } catch (err) {
+    console.error("[DB lookup] Failed to query Neon:", err && err.message ? err.message : err);
+    return null; // fail-open: fall back to global env defaults
+  }
+}
+
 
 /* ---------------- Rate limiter (KV-backed, per-IP) ---------------- */
 async function checkRateLimit(env, _ctx, clientIp) {
@@ -349,25 +424,20 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-/* ---------------- Keyword matching (unchanged logic) ---------------- */
-function getKeywords(env) {
-  const raw = (env.KEYWORDS || DEFAULTS.KEYWORDS).toString();
-  return raw
+function matchKeywordDirect(text, keywordsStr, mode) {
+  const haystack = String(text || "").toLowerCase();
+  const modeStr = String(mode || DEFAULTS.MATCH_MODE).toLowerCase();
+
+  // "any" mode: every comment triggers a DM — no keyword matching needed
+  if (modeStr === "any") return "__any__";
+
+  const keywords = String(keywordsStr || DEFAULTS.KEYWORDS)
     .split(",")
     .map((k) => k.trim().toLowerCase())
     .filter(Boolean);
-}
 
-function matchKeyword(text, env) {
-  const haystack = String(text || "").toLowerCase();
-  const mode = (env.MATCH_MODE || DEFAULTS.MATCH_MODE).toLowerCase();
-
-  // "any" mode: every comment triggers a DM — no keyword matching needed
-  if (mode === "any") return "__any__";
-
-  const keywords = getKeywords(env);
   for (const kw of keywords) {
-    if (mode === "word") {
+    if (modeStr === "word") {
       const re = new RegExp(
         `(^|[^\\p{L}\\p{N}_])${escapeRegex(kw)}([^\\p{L}\\p{N}_]|$)`,
         "iu",
@@ -378,6 +448,11 @@ function matchKeyword(text, env) {
     }
   }
   return null;
+}
+
+// Legacy wrapper used nowhere now but kept for safety
+function matchKeyword(text, env) {
+  return matchKeywordDirect(text, env.KEYWORDS, env.MATCH_MODE);
 }
 
 function escapeRegex(s) {

@@ -68,6 +68,7 @@ export default function Tester() {
   const [cTemplate, setCTemplate] = useState("Hey {username}! Reel me bataya gaya tool link: https://yourwebsite.com/tool");
   const [cMatchMode, setCMatchMode] = useState<"partial" | "word" | "any">("partial");
   const [cReelUrl, setCReelUrl] = useState("");
+  const [cReelMediaId, setCReelMediaId] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Search / Filter
@@ -112,6 +113,7 @@ export default function Tester() {
           replyTemplate: c.replyTemplate,
           matchMode: c.matchMode,
           reelUrl: c.reelUrl,
+          reelMediaId: c.reelMediaId || null,
         }),
       });
       loadCampaigns();
@@ -229,10 +231,12 @@ export default function Tester() {
           replyTemplate: cTemplate,
           matchMode: cMatchMode,
           reelUrl: cReelUrl.trim() || null,
+          reelMediaId: cReelMediaId.trim() || null,
         }),
       });
       setCName("");
       setCReelUrl("");
+      setCReelMediaId("");
       loadCampaigns();
     } finally {
       setSaving(false);
@@ -497,8 +501,30 @@ export default function Tester() {
                   placeholder="https://www.instagram.com/reel/ABC123xyz/"
                   className="mt-1 w-full rounded-xl border border-indigo-500/30 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
                 />
-                <p className="mt-1 text-[11px] text-slate-400">Paste your Reel link — for reference, not required.</p>
+                <p className="mt-1 text-[11px] text-slate-400">Paste your Reel link — for reference display only.</p>
               </div>
+
+              {/* Reel Media ID — KEY field for per-reel matching */}
+              <div>
+                <label className="block text-xs font-semibold uppercase text-amber-400 flex items-center gap-1.5">
+                  <span>⚡ Instagram Media ID</span>
+                  <span className="text-[10px] font-bold text-amber-300 border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 rounded-full">Required for per-reel matching</span>
+                </label>
+                <input
+                  type="text"
+                  value={cReelMediaId}
+                  onChange={(e) => setCReelMediaId(e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 17841234567890123"
+                  className="mt-1 w-full rounded-xl border border-amber-500/30 bg-slate-950 px-3.5 py-2 text-sm font-mono text-amber-200 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Yeh Reel ka numeric ID hain. Graph API se milega:{" "}
+                  <code className="text-amber-300">GET /me/media → id field</code>.{" "}
+                  <span className="text-amber-400 font-semibold">Iske bina sab reels par same DM jaayegi.</span>
+                </p>
+              </div>
+
+
 
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-400">

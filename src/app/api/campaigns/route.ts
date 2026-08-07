@@ -63,6 +63,7 @@ export async function POST(req: Request) {
         replyTemplate: safeTemplate,
         matchMode: sanitizeMatchMode(matchMode),
         reelUrl: body.reelUrl ? String(body.reelUrl).slice(0, MAX_URL_LEN).trim() : null,
+        reelMediaId: body.reelMediaId ? String(body.reelMediaId).replace(/\D/g, "").slice(0, 30) : null,
         isActive: true,
       })
       .returning();
@@ -93,6 +94,7 @@ export async function PUT(req: Request) {
         ...(matchMode && { matchMode: sanitizeMatchMode(matchMode) }),
         ...(typeof isActive === "boolean" && { isActive }),
         ...("reelUrl" in body && { reelUrl: body.reelUrl ? String(body.reelUrl).slice(0, MAX_URL_LEN).trim() : null }),
+        ...("reelMediaId" in body && { reelMediaId: body.reelMediaId ? String(body.reelMediaId).replace(/\D/g, "").slice(0, 30) : null }),
         updatedAt: new Date(),
       })
       .where(eq(automationCampaigns.id, Number(id)))
