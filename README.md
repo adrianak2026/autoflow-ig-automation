@@ -16,8 +16,35 @@
 
 ---
 
-🔥 **[New user? Click here to read SETUP_GUIDE_EN.md for setup and deployment!](./SETUP_GUIDE_EN.md)** 🔥
-*(Hinglish version available here: [SETUP_GUIDE_HI.md](./SETUP_GUIDE_HI.md))*
+## ⚡ Deploy in Seconds (1-Click Setup)
+
+Deploy your own Instagram DM Automation SaaS in seconds - **no coding or laptop required**.
+*(Want to do it manually? Read the [English Setup Guide](./SETUP_GUIDE_EN.md) or [Hinglish Setup Guide](./SETUP_GUIDE_HI.md))*
+
+### Step 1: Deploy Backend (Webhook)
+<div align="center">
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/SudhirDevOps1/serverless-instagram-dm-automation)
+
+</div>
+
+When you click this button, Cloudflare will automatically:
+1. Copy this repository to your account.
+2. Create the **KOSH_KV** storage automatically for spam protection.
+3. Ask you for the required Secrets (e.g., `META_APP_SECRET`, `PAGE_ACCESS_TOKEN`, `IG_PAGE_ID`). *If you don't have them yet, you can leave them blank and add them later in Cloudflare Settings!*
+4. Deploy the backend and give you a Webhook URL!
+
+### Step 2: Deploy Frontend & Database
+<div align="center">
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SudhirDevOps1/serverless-instagram-dm-automation)
+
+</div>
+
+When you click this button, Vercel will:
+1. Ask you for your **`DATABASE_URL`** (from Neon Postgres) and an **`ADMIN_SECRET_TOKEN`** (your custom password).
+2. Deploy the Admin Dashboard.
+3. **Important:** After it is deployed, open your new dashboard URL, go to the **"⚙️ Settings & AI"** tab, and click the **"🚀 Initialize Database Tables"** button to finish your setup!
 
 ---
 
