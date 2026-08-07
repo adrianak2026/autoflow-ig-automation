@@ -51,6 +51,8 @@
 | **"Any Comment" Mode** | ✅ Yes | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
 | **Per-Reel Campaign** | ✅ Yes (media_id) | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
 | **Story Mention → DM** | ✅ Yes | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
+| **🤖 AI Smart Auto-Replies**| ✅ Yes (Custom API)| ❌ No | ❌ No | ✅ Paid | ❌ No |
+| **Human Handoff Pause** | ✅ Yes (1-hour pause)| ❌ No | ❌ No | ✅ Paid | ❌ No |
 | **Lead Capture Database** | ✅ Neon Postgres | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
 | **CSV Export (Leads)** | ✅ Yes | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
 | **Monthly Cost** | **🆓 ₹0 Free** | 💸 ₹1,000–5,000/mo | ₹0 Limited | 💸 ₹3,000+/mo | 💸 ₹2,000+/mo |
@@ -99,13 +101,23 @@
 - **Search by username** — bade lead lists ko filter karo
 - **Apni email list ki tarah Instagram lead list banao**
 
-### 6. 📊 Stats Dashboard — Live Campaign Overview
+### 6. 🤖 AI Smart Auto-Replies (New)
+- **Dynamic Human-like DMs:** Use any OpenAI-compatible API (OpenAI, Groq, Claude proxy) to send natural replies.
+- **Context Aware:** AI generates the message combining the user's comment, trigger keyword, and your link.
+- **Edge Compatible:** Cloudflare worker directly talks to the AI endpoint; no extra DB roundtrip needed for generation.
+- **Dynamic Model Fetching:** Instantly fetches available models via the UI.
+
+### 7. 👤 Human Handoff (1-Hour Pause) (New)
+- Agar tum manually (browser/app) se kisi ko reply karte ho (which triggers `is_echo: true`), **AutoFlow IG automatically us user ke liye 1 hour ke liye pause ho jaata hai.**
+- Taki AI aur tumhara message clash na ho.
+
+### 8. 📊 Stats Dashboard — Live Campaign Overview
 - **Total Rules** count
 - **Active vs Paused** rules ka breakdown
 - **Any-Comment Rules** count
 - Live badges — Neon DB se real-time data
 
-### 7. ✏️ Browser-Based Campaign Manager — Full CRUD
+### 9. ✏️ Browser-Based Campaign Manager — Full CRUD
 - Browser se Reel rules **Add / Edit / Rename / Delete** karo
 - **⏸ Pause / ▶ Activate** — campaign band karo bina delete kiye
 - **📋 Copy DM** — DM template clipboard mein copy karo (2 sec feedback)
@@ -115,12 +127,12 @@
 - **Koi coding nahi, koi server nahi — seedha dashboard se manage karo**
 - **Admin Password Protection** — sirf tum manage kar sako
 
-### 8. ⚡ Live Keyword Matcher Tester
+### 10. ⚡ Live Keyword Matcher Tester
 - Koi bhi comment text daalo → instantly dekho ki DM trigger hogi ya nahi
 - Partial, Word, aur Any mode test karo
 - Test logs Neon DB mein save hote hain history ke liye
 
-### 9. 🔒 Production Security (15 Layers)
+### 11. 🔒 Production Security (15 Layers)
 - Bearer Token API authentication (Admin-only actions)
 - HMAC-SHA256 Meta Webhook Signature Verification
 - Rate limiting per-IP (KV-backed sliding window)
@@ -155,10 +167,12 @@ sequenceDiagram
     Instagram->>Meta: Sends Comment Event (with media_id)
     Meta->>Worker: POST /webhook (HMAC-SHA256 signed)
     Worker->>Worker: Verify HMAC Signature
+    Worker->>Worker: Check Human-Handoff Pause (`is_echo` in KV)
     Worker->>Worker: Extract media_id from webhook
     Worker->>Neon: SELECT campaign WHERE reel_media_id = media_id
     Neon-->>Worker: Returns campaign for Reel #42
     Worker->>Worker: Match keyword against campaign rules
+    Worker->>Worker: (Optional) Call AI API for smart reply
     Worker->>Meta: POST /private_replies → Auto DM with Reel #42 link
     Worker->>Neon: Log lead (username, keyword, campaign)
     Meta->>User: User receives Private DM instantly
@@ -218,6 +232,12 @@ test_match_logs              ← Live tester history
   matched                    Boolean
   matched_keyword            Which keyword matched
   rendered_dm                What DM would have been sent
+
+system_settings              ← AI configuration and global settings
+  id                         UUID PK
+  key                        String (e.g., 'ai_config')
+  value                      JSONB
+  updated_at                 Timestamp
 ```
 
 ---
@@ -430,6 +450,11 @@ autoflow-ig-automation/
 - Test against keyword rules in real-time
 - View rendered DM template output
 - Test logs saved to Neon DB
+
+### Tab 5: AI Configuration (New)
+- Provide Custom Provider, API Key, and Model Name (e.g. OpenAI, Claude, Groq)
+- Fetch available models straight from the provider
+- Enable/Disable AI overriding for smarter natural replies
 
 ---
 

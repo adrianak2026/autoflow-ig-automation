@@ -54,7 +54,7 @@ type TestResult = {
 };
 
 export default function Tester() {
-  const [activeTab, setActiveTab] = useState<"builder" | "story" | "leads" | "tester">("builder");
+  const [activeTab, setActiveTab] = useState<"builder" | "story" | "leads" | "tester" | "ai">("builder");
 
   // Admin Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -79,6 +79,15 @@ export default function Tester() {
   // Copy feedback
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
+  // AI State
+  const [aiProvider, setAiProvider] = useState("");
+  const [aiEndpoint, setAiEndpoint] = useState("https://api.openai.com/v1");
+  const [aiModel, setAiModel] = useState("");
+  const [aiKey, setAiKey] = useState("");
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiModelsList, setAiModelsList] = useState<string[]>([]);
+  const [aiLoadingModels, setAiLoadingModels] = useState(false);
+  const [aiSaving, setAiSaving] = useState(false);
 
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -212,10 +221,30 @@ export default function Tester() {
     }
   }
 
+  async function loadAiSettings() {
+    try {
+      const r = await fetch("/api/ai-settings", { headers: getAuthHeaders() });
+      if (r.ok) {
+        const j = await r.json();
+        setAiProvider(j.providerName || "");
+        setAiEndpoint(j.endpointUrl || "https://api.openai.com/v1");
+        setAiModel(j.modelName || "");
+        setAiKey(j.apiKey || "");
+        setAiEnabled(j.isEnabled || false);
+      }
+    } catch {
+      /* noop */
+    }
+  }
+
   useEffect(() => {
     loadCampaigns();
     loadExtraFeatures();
     loadHistory();
+    if (typeof window !== "undefined" && localStorage.getItem("autoflow_admin_token")) {
+      setIsAuthenticated(true);
+      loadAiSettings();
+    }
   }, []);
 
   async function handleCreateCampaign(e: React.FormEvent) {
@@ -303,12 +332,63 @@ export default function Tester() {
     }
   }
 
+  async function fetchAiModels() {
+    if (!aiKey || !aiEndpoint) {
+      alert("Please enter API Key and Endpoint URL first.");
+      return;
+    }
+    setAiLoadingModels(true);
+    try {
+      const res = await fetch(`${aiEndpoint}/models`, {
+        headers: {
+          "Authorization": `Bearer ${aiKey}`,
+          "Content-Type": "application/json"
+        }
+      });
+      if (!res.ok) throw new Error("Failed to fetch models");
+      const data = await res.json();
+      if (data && data.data && Array.isArray(data.data)) {
+        setAiModelsList(data.data.map((m: any) => m.id).filter(Boolean));
+      } else {
+        alert("Unexpected response format from API");
+      }
+    } catch (err: any) {
+      alert("Error fetching models: " + err.message);
+    } finally {
+      setAiLoadingModels(false);
+    }
+  }
+
+  async function handleSaveAiSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setAiSaving(true);
+    try {
+      await fetch("/api/ai-settings", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          providerName: aiProvider,
+          endpointUrl: aiEndpoint,
+          modelName: aiModel,
+          apiKey: aiKey,
+          isEnabled: aiEnabled
+        })
+      });
+      alert("AI Settings Saved!");
+    } catch (err) {
+      alert("Failed to save AI settings.");
+    } finally {
+      setAiSaving(false);
+    }
+  }
+
   useEffect(() => {
     loadCampaigns();
     loadExtraFeatures();
     loadHistory();
     if (typeof window !== "undefined" && localStorage.getItem("autoflow_admin_token")) {
       setIsAuthenticated(true);
+      loadAiSettings();
     }
   }, []);
 
@@ -326,6 +406,7 @@ export default function Tester() {
       if (res.ok && data.success) {
         setIsAuthenticated(true);
         localStorage.setItem("autoflow_admin_token", data.token);
+        loadAiSettings();
       } else {
         setAuthError(data.error || "Invalid username or password");
       }
@@ -450,6 +531,17 @@ export default function Tester() {
           }`}
         >
           <span>⚡ Live Tester</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ai")}
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
+            activeTab === "ai"
+              ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_0_20px_-5px_rgba(245,158,11,0.5)] scale-[1.02]"
+              : "text-slate-400 hover:bg-white/5 hover:text-white"
+          }`}
+        >
+          <span>🤖 AI Config</span>
         </button>
       </div>
 
@@ -1052,6 +1144,117 @@ export default function Tester() {
               ))}
             </ul>
           </div>
+        </div>
+      )}
+
+      {/* TAB 5: AI Configuration */}
+      {activeTab === "ai" && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 shadow-sm backdrop-blur">
+          <div className="mb-6 border-b border-amber-500/20 pb-4">
+            <h3 className="text-xl font-bold text-amber-400 flex items-center gap-2">
+              <span>🤖 AI Auto-Reply Configuration</span>
+            </h3>
+            <p className="mt-1 text-sm text-slate-400">
+              Generate dynamic, personalized human-like replies using any OpenAI-compatible AI API (OpenAI, Groq, Claude via proxy, etc.).
+            </p>
+          </div>
+
+          <form onSubmit={handleSaveAiSettings} className="space-y-5">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={(e) => setAiEnabled(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="peer h-6 w-11 rounded-full bg-slate-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-800"></div>
+              </label>
+              <span className="text-sm font-bold text-white">Enable AI Smart Auto-Replies</span>
+              <span className="text-xs text-slate-400">(Overrides static templates when possible. Fails over to static if AI times out.)</span>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-400">Provider Name</label>
+                <input
+                  type="text"
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                  placeholder="e.g. OpenAI, Groq, Together"
+                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-400">API Endpoint URL</label>
+                <input
+                  type="url"
+                  value={aiEndpoint}
+                  onChange={(e) => setAiEndpoint(e.target.value)}
+                  placeholder="https://api.openai.com/v1"
+                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm font-mono text-white focus:border-amber-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-xs font-semibold uppercase text-slate-400">Secret API Key</label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={aiKey}
+                    onChange={(e) => setAiKey(e.target.value)}
+                    placeholder="sk-..."
+                    className="mt-1 flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm font-mono text-white focus:border-amber-500 focus:outline-none"
+                    required={aiEnabled}
+                  />
+                  <button
+                    type="button"
+                    onClick={fetchAiModels}
+                    disabled={aiLoadingModels || !aiKey}
+                    className="mt-1 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-bold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-50 transition"
+                  >
+                    {aiLoadingModels ? "Loading..." : "⚡ Fetch Models"}
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Key is saved securely in Neon DB for the edge worker to use.</p>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-xs font-semibold uppercase text-slate-400">Model Name</label>
+                {aiModelsList.length > 0 ? (
+                  <select
+                    value={aiModel}
+                    onChange={(e) => setAiModel(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-amber-500/50 bg-slate-950 px-3.5 py-2.5 text-sm font-mono text-amber-300 focus:border-amber-500 focus:outline-none"
+                    required={aiEnabled}
+                  >
+                    <option value="">Select a model...</option>
+                    {aiModelsList.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={aiModel}
+                    onChange={(e) => setAiModel(e.target.value)}
+                    placeholder="e.g. gpt-4o-mini"
+                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm font-mono text-amber-300 focus:border-amber-500 focus:outline-none"
+                    required={aiEnabled}
+                  />
+                )}
+                <p className="mt-1 text-xs text-slate-500">Click Fetch Models to load available options, or type it manually.</p>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={aiSaving}
+              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-3 font-bold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50"
+            >
+              {aiSaving ? "Saving Configuration..." : "💾 Save AI Settings"}
+            </button>
+          </form>
         </div>
       )}
     </div>

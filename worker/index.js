@@ -58,6 +58,7 @@ const MetaWebhookPayloadSchema = z.object({
             }),
           )
           .optional(),
+        messaging: z.array(z.any()).optional(),
       }),
     )
     .optional(),
@@ -225,6 +226,19 @@ async function handleEvent(request, env, ctx) {
       console.warn("Skipping outdated webhook event to prevent replay attack.", { entryTime: entry.time });
       continue;
     }
+
+    const messaging = Array.isArray(entry.messaging) ? entry.messaging : [];
+    for (const msg of messaging) {
+      // Check for human handoff (is_echo means sent from page to user)
+      if (msg.message && msg.message.is_echo && msg.recipient && msg.recipient.id) {
+         const userId = msg.recipient.id;
+         if (env.KOSH_KV) {
+            ctx.waitUntil(env.KOSH_KV.put(`pause:${userId}`, "true", { expirationTtl: 3600 }));
+            console.log(`Human handoff detected. Paused automation for user ${userId} for 1 hour.`);
+         }
+      }
+    }
+
     const changes = Array.isArray(entry.changes) ? entry.changes : [];
     for (const change of changes) {
       if (change.field !== "comments") continue;
@@ -249,6 +263,15 @@ async function handleEvent(request, env, ctx) {
       if (env.IG_PAGE_ID && fromId && String(fromId) === String(env.IG_PAGE_ID)) {
         console.log("Skipping self-comment from page:", fromId);
         continue;
+      }
+
+      // Human Handoff / Pause Check
+      if (fromId && env.KOSH_KV) {
+         const isPaused = await env.KOSH_KV.get(`pause:${fromId}`);
+         if (isPaused) {
+           console.log(`Automation paused for user ${fromId} (human handoff). Skipping comment.`);
+           continue;
+         }
       }
 
       // ── Per-Reel Campaign Lookup from Neon DB ──────────────────────────────
@@ -292,9 +315,18 @@ async function handleEvent(request, env, ctx) {
         continue;
       }
 
-      const message = renderTemplate(effectiveTemplate, { username, keyword });
+      let finalMessage = renderTemplate(effectiveTemplate, { username, keyword });
 
-      ctx.waitUntil(sendPrivateReply(commentId, message, env));
+      // ----- AI Smart Auto-Reply Integration -----
+      if (env.DATABASE_URL) {
+         const aiMsg = await generateAiReply(env.DATABASE_URL, username, text, keyword, finalMessage);
+         if (aiMsg) {
+            finalMessage = aiMsg;
+            console.log("Using AI generated reply:", finalMessage);
+         }
+      }
+
+      ctx.waitUntil(sendPrivateReply(commentId, finalMessage, env));
       ctx.waitUntil(
         logAnalyticsEvent(env, ctx, {
           event: "ig.dm.sent",
@@ -355,6 +387,52 @@ async function findCampaignForMedia(databaseUrl, mediaId) {
   }
 }
 
+
+/* ── AI Reply Generation via DB Settings ─────────────────────────────────── */
+async function generateAiReply(databaseUrl, username, commentText, keyword, templateText) {
+  try {
+    const pgUrl = new URL(databaseUrl);
+    const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
+    const query = `SELECT value FROM system_settings WHERE key = 'ai_config' LIMIT 1`;
+    const res = await fetch(neonHttpUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${pgUrl.password}` },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.rows || data.rows.length === 0) return null;
+    
+    const config = data.rows[0].value;
+    if (!config || !config.isEnabled || !config.apiKey || !config.endpointUrl || !config.modelName) return null;
+
+    const prompt = `You are a helpful and engaging Instagram assistant. 
+The user ${username} just commented "${commentText}" and matched the trigger keyword "${keyword}".
+Write a very short, friendly, human-like DM reply (1-2 sentences max) incorporating this message/link: "${templateText}".
+Do not include hashtags or robotic language. Keep it natural.`;
+
+    const aiRes = await fetch(`${config.endpointUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${config.apiKey}`
+      },
+      body: JSON.stringify({
+        model: config.modelName,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 150
+      })
+    });
+
+    if (!aiRes.ok) return null;
+    const aiData = await aiRes.json();
+    return aiData.choices?.[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error("[AI Generation Error]", err);
+    return null; // fallback to static template
+  }
+}
 
 /* ---------------- Rate limiter (KV-backed, per-IP) ---------------- */
 async function checkRateLimit(env, _ctx, clientIp) {
