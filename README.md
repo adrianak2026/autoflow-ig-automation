@@ -16,6 +16,8 @@
 
 ---
 
+🔥 **[naya user hai? SETUP_GUIDE.md (Hinglish) padhein setup aur deployment ke liye yahan click karein!](./SETUP_GUIDE.md)** 🔥
+
 ## 🎯 Yeh App Kya Karta Hai?
 
 **AutoFlow IG** ek **serverless Instagram DM Automation system** hai jo tumhare Instagram Reels, Posts, aur Stories ko automatic lead generation machine mein convert karta hai.
