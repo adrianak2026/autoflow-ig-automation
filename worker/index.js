@@ -170,18 +170,11 @@ function handleVerification(url, env) {
 /* ---------------- 2) Event handler (POST) ---------------- */
 async function handleEvent(request, env, ctx) {
   // ----- Secure IP detection (Strict Cloudflare Header) -----
-  const clientIp =
-    request.headers.get("cf-connecting-ip") ||
-    "unknown";
+  const clientIp = request.headers.get("cf-connecting-ip") || "unknown";
 
-  const rl = await checkRateLimit(env, ctx, clientIp);
-  if (rl.blocked) {
-    console.error(`Rate limit exceeded for ${clientIp}`);
-    return respondWith(429, "Too Many Requests", {
-      "content-type": "text/plain",
-      "retry-after": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
-    });
-  }
+  // Note: Removed IP-based rate limiting for webhooks. 
+  // Meta sends webhooks from shared IPs. A viral reel would get blocked by rate limiting.
+  // Security is handled by HMAC-SHA256 signature verification below.
 
   // ----- Signature verification (HMAC-SHA256 of raw body) -----
   const rawBody = await request.text();
@@ -243,12 +236,15 @@ async function handleEvent(request, env, ctx) {
     for (const change of changes) {
       if (change.field !== "comments") continue;
 
-      const value = change.value || {};
-      const commentId = value.id;
-      const text = value.text || "";
-      const fromId = value.from && value.from.id;
-      const username =
-        (value.from && (value.from.username || value.from.name)) || "there";
+      // Wrap processing in ctx.waitUntil to instantly return 200 OK to Meta
+      // Prevents timeouts if AI generation or DB lookups take longer than expected.
+      ctx.waitUntil((async () => {
+        const value = change.value || {};
+        const commentId = value.id;
+        const text = value.text || "";
+        const fromId = value.from && value.from.id;
+        const username =
+          (value.from && (value.from.username || value.from.name)) || "there";
 
       // Extract the media/reel ID this comment was posted on
       // Meta sends it as value.media.id or value.media_id
@@ -263,6 +259,18 @@ async function handleEvent(request, env, ctx) {
       if (env.IG_PAGE_ID && fromId && String(fromId) === String(env.IG_PAGE_ID)) {
         console.log("Skipping self-comment from page:", fromId);
         continue;
+      }
+
+      // Spam Protection Check (Max 3 DMs per user per Reel per 24 hours)
+      let currentSpamCount = 0;
+      const spamKey = commentMediaId ? `spam:${fromId}:${commentMediaId}` : `spam:${fromId}`;
+      if (fromId && env.KOSH_KV) {
+         const spamCountStr = await env.KOSH_KV.get(spamKey);
+         currentSpamCount = Number(spamCountStr) || 0;
+         if (currentSpamCount >= 3) {
+            console.log(`User ${fromId} reached max DM limit (3) for reel ${commentMediaId}. Skipping comment to save limits.`);
+            continue;
+         }
       }
 
       // Human Handoff / Pause Check
@@ -315,29 +323,35 @@ async function handleEvent(request, env, ctx) {
         continue;
       }
 
+      // Increment Spam Protection Counter since we are going to send a DM
+      if (fromId && env.KOSH_KV) {
+          ctx.waitUntil(env.KOSH_KV.put(spamKey, String(currentSpamCount + 1), { expirationTtl: 86400 })); // Reset after 24 hours
+      }
+
       let finalMessage = renderTemplate(effectiveTemplate, { username, keyword });
 
       // ----- AI Smart Auto-Reply Integration -----
       if (env.DATABASE_URL) {
-         const aiMsg = await generateAiReply(env.DATABASE_URL, username, text, keyword, finalMessage);
+         const aiMsg = await generateAiReply(env.DATABASE_URL, username, text, keyword, finalMessage, env);
          if (aiMsg) {
             finalMessage = aiMsg;
             console.log("Using AI generated reply:", finalMessage);
          }
       }
 
-      ctx.waitUntil(sendPrivateReply(commentId, finalMessage, env));
-      ctx.waitUntil(
-        logAnalyticsEvent(env, ctx, {
-          event: "ig.dm.sent",
-          commentId,
-          username,
-          keyword,
-          mediaId: commentMediaId,
-          campaignId: effectiveCampaignId,
-          clientIp,
-        }),
-      );
+      await sendPrivateReply(commentId, finalMessage, env);
+      await logAnalyticsEvent(env, ctx, {
+        event: "ig.dm.sent",
+        commentId,
+        username,
+        keyword,
+        mediaId: commentMediaId,
+        campaignId: effectiveCampaignId,
+        clientIp,
+      });
+      })().catch(err => {
+        console.error("Async comment processing failed:", err);
+      }));
     }
   }
 
@@ -389,7 +403,7 @@ async function findCampaignForMedia(databaseUrl, mediaId) {
 
 
 /* ── AI Reply Generation via DB Settings ─────────────────────────────────── */
-async function generateAiReply(databaseUrl, username, commentText, keyword, templateText) {
+async function generateAiReply(databaseUrl, username, commentText, keyword, templateText, env) {
   try {
     const pgUrl = new URL(databaseUrl);
     const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
@@ -406,6 +420,12 @@ async function generateAiReply(databaseUrl, username, commentText, keyword, temp
     const config = data.rows[0].value;
     if (!config || !config.isEnabled || !config.apiKey || !config.endpointUrl || !config.modelName) return null;
 
+    let actualApiKey = config.apiKey;
+    // Decrypt the API Key using ADMIN_SECRET_TOKEN
+    if (env.ADMIN_SECRET_TOKEN) {
+       actualApiKey = await decryptSymmetric(actualApiKey, env.ADMIN_SECRET_TOKEN);
+    }
+
     const prompt = `You are a helpful and engaging Instagram assistant. 
 The user ${username} just commented "${commentText}" and matched the trigger keyword "${keyword}".
 Write a very short, friendly, human-like DM reply (1-2 sentences max) incorporating this message/link: "${templateText}".
@@ -415,7 +435,7 @@ Do not include hashtags or robotic language. Keep it natural.`;
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${config.apiKey}`
+        "Authorization": `Bearer ${actualApiKey}`
       },
       body: JSON.stringify({
         model: config.modelName,
@@ -432,6 +452,50 @@ Do not include hashtags or robotic language. Keep it natural.`;
     console.error("[AI Generation Error]", err);
     return null; // fallback to static template
   }
+}
+
+/* ── WebCrypto Decryption ────────────────────────────────────────────────── */
+async function decryptSymmetric(encrypted, secret) {
+  if (!encrypted || !encrypted.includes(":")) return encrypted;
+  try {
+    const parts = encrypted.split(":");
+    if (parts.length !== 2) return encrypted;
+
+    const iv = hex2buf(parts[0]);
+    const ciphertext = hex2buf(parts[1]);
+
+    const enc = new TextEncoder();
+    const keyMaterial = enc.encode(secret);
+    const hash = await crypto.subtle.digest("SHA-256", keyMaterial);
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      hash,
+      { name: "AES-GCM" },
+      false,
+      ["decrypt"]
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      key,
+      ciphertext
+    );
+
+    const dec = new TextDecoder();
+    return dec.decode(decrypted);
+  } catch (err) {
+    console.error("Decryption failed", err);
+    return "";
+  }
+}
+
+function hex2buf(hexString) {
+  const bytes = new Uint8Array(Math.ceil(hexString.length / 2));
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hexString.substr(i * 2, 2), 16);
+  }
+  return bytes;
 }
 
 /* ---------------- Rate limiter (KV-backed, per-IP) ---------------- */

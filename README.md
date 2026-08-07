@@ -107,8 +107,9 @@
 - **Edge Compatible:** Cloudflare worker directly talks to the AI endpoint; no extra DB roundtrip needed for generation.
 - **Dynamic Model Fetching:** Instantly fetches available models via the UI.
 
-### 7. 👤 Human Handoff (1-Hour Pause) (New)
-- Agar tum manually (browser/app) se kisi ko reply karte ho (which triggers `is_echo: true`), **AutoFlow IG automatically us user ke liye 1 hour ke liye pause ho jaata hai.**
+### 7. 👤 Human Handoff (1-Hour Pause) & Spam Protection (New)
+- **Spam Protection:** Agar ek hi user bar-bar comment karta hai, to system use **maximum 3 baar hi auto-DM** bhejega (24 hours ke andar). Isse apke API limits aur database safe rehte hain.
+- **Human Handoff:** Agar tum manually (browser/app) se kisi ko reply karte ho (which triggers `is_echo: true`), **AutoFlow IG automatically us user ke liye 1 hour ke liye pause ho jaata hai.**
 - Taki AI aur tumhara message clash na ho.
 
 ### 8. 📊 Stats Dashboard — Live Campaign Overview
@@ -132,14 +133,15 @@
 - Partial, Word, aur Any mode test karo
 - Test logs Neon DB mein save hote hain history ke liye
 
-### 11. 🔒 Production Security (15 Layers)
+### 11. 🔒 Production Security & Encryption (15+ Layers)
+- **AES-256-GCM Encryption (New):** All sensitive configurations (like AI API Keys) are encrypted before hitting the database using your `ADMIN_SECRET_TOKEN` as the master key. Even if the Neon DB is compromised, hackers get only scrambled text.
+- **Strict HTTP Security Headers:** Enforced HSTS (Strict-Transport-Security), XSS Protection, CSP, and X-Frame-Options on all routes via `next.config.ts`.
 - Bearer Token API authentication (Admin-only actions)
 - HMAC-SHA256 Meta Webhook Signature Verification
 - Rate limiting per-IP (KV-backed sliding window)
 - Replay attack prevention (5-min event age check)
 - Input validation + length limits (SQL injection prevention)
 - Zlib compression for DM templates in DB
-- CORS + Security headers (X-Frame-Options, XSS, HSTS, CSP)
 - Self-comment filter (worker apne aap ko DM nahi karta)
 - Fail-closed architecture (secrets not set = app refuses to start)
 - Zod schema validation on all webhook payloads

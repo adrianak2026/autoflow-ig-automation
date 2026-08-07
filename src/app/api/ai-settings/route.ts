@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { systemSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { verifyAdminToken, unauthorizedResponse } from "@/lib/auth";
+import { encryptSymmetric, decryptSymmetric } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,12 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json(setting.valueJson);
+    const value = setting.valueJson as any;
+    if (value && value.apiKey && process.env.ADMIN_SECRET_TOKEN) {
+      value.apiKey = await decryptSymmetric(value.apiKey, process.env.ADMIN_SECRET_TOKEN);
+    }
+
+    return NextResponse.json(value);
   } catch (err) {
     console.error("[AI_SETTINGS_GET]", err);
     return NextResponse.json({ error: "Failed to fetch AI settings" }, { status: 500 });
@@ -40,11 +46,16 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { providerName, endpointUrl, modelName, apiKey, isEnabled } = body;
 
+    let finalApiKey = String(apiKey || "");
+    if (finalApiKey && process.env.ADMIN_SECRET_TOKEN) {
+      finalApiKey = await encryptSymmetric(finalApiKey, process.env.ADMIN_SECRET_TOKEN);
+    }
+
     const payload = {
       providerName: String(providerName || ""),
       endpointUrl: String(endpointUrl || ""),
       modelName: String(modelName || ""),
-      apiKey: String(apiKey || ""),
+      apiKey: finalApiKey,
       isEnabled: Boolean(isEnabled),
     };
 
