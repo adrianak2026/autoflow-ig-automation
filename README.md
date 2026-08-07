@@ -433,8 +433,16 @@ autoflow-ig-automation/
 
 ---
 
-## 📄 License
+## 🙏 Acknowledgments
 
+- [Cloudflare Workers](https://workers.cloudflare.com/) — For the blazing fast serverless edge runtime.
+- [Neon Postgres](https://neon.tech/) — For the scalable, serverless, and free tier database.
+- [Next.js](https://nextjs.org/) — For the modern React framework driving our dashboard.
+- [Drizzle ORM](https://orm.drizzle.team/) — For making database interactions fully type-safe and edge-compatible.
+
+---
+
+## 📄 License
 [MIT License](LICENSE) — Free use, modification, and distribution.
 
 ---
