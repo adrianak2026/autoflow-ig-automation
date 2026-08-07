@@ -103,7 +103,13 @@ Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**. (
 
 ---
 
-## 🚀 Features Breakdown
+## 🛡️ Meta Developer Policy Compliance
+
+AutoFlow IG is explicitly designed to be **100% compliant** with [Meta's Developer Policies](https://developers.facebook.com/devpolicy/) to keep your account safe from bans. It strictly follows the rules for user opt-in (24-Hour Messaging Window), anti-spam (Max 3 DMs limit), human handoff (1-hour pause), and forbids deceptive practices.
+
+👉 **[Read the Full Meta Policy Compliance Details Here](./META_POLICY_COMPLIANCE.md)**
+
+---
 
 ### 1. 🎬 Reel Comment → Auto DM (Core Feature)
 - Paste your Instagram Reel link
