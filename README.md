@@ -36,30 +36,30 @@ Deploy your own Instagram DM Automation SaaS in seconds - **no coding or laptop 
 
 </div>
 
-**जब आप इस बटन पर क्लिक करेंगे तो क्या होगा?**
-1. Cloudflare की एक स्क्रीन खुलेगी और आपसे प्रोजेक्ट का नाम पूछेगी।
-2. यह **KOSH_KV** (Spam Protection के लिए) अपने आप बना देगा!
-3. आपसे यह निम्नलिखित Keys (Secrets) मांगेगा:
-   * **`META_APP_SECRET`** (✅ Required - Facebook App से मिलेगा)
-   * **`PAGE_ACCESS_TOKEN`** (✅ Required - Instagram API के लिए)
-   * **`IG_PAGE_ID`** (✅ Required - आपके Instagram पेज की ID)
+**What happens when you click this button?**
+1. A Cloudflare screen will open and ask for a project name.
+2. It will automatically create **KOSH_KV** (for Spam Protection)!
+3. It will prompt you for the following Keys (Secrets):
+   * **`META_APP_SECRET`** (✅ Required - Obtained from Facebook App)
+   * **`PAGE_ACCESS_TOKEN`** (✅ Required - For Instagram API)
+   * **`IG_PAGE_ID`** (✅ Required - Your Instagram Page ID)
    
-> **नोट (Safely):** अगर आपके पास अभी ये नहीं हैं, तो आप इसे खाली छोड़ सकते हैं और बाद में **Cloudflare Worker Settings -> Variables & Secrets** में सुरक्षित तरीके से डाल सकते हैं।
+> **Note (Safely):** If you don't have these right now, you can leave them blank and securely add them later in **Cloudflare Worker Settings -> Variables & Secrets**.
 
 ### Step 2: Deploy Frontend & Database (Cloudflare Pages)
 
-Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**. (चूँकि Cloudflare Pages का डायरेक्ट 1-Click बटन नहीं होता, इसलिए इसे ऐसे डिप्लॉय करें):
+Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**. (Since Cloudflare Pages doesn't have a direct 1-Click button, deploy it like this):
 
-1. अपने Cloudflare Dashboard में जाएँ -> **Workers & Pages** -> **Overview**।
-2. **Create Application** -> **Pages** -> **Connect to Git** पर क्लिक करें और अपनी GitHub रिपॉजिटरी चुनें।
+1. Go to your Cloudflare Dashboard -> **Workers & Pages** -> **Overview**.
+2. Click on **Create Application** -> **Pages** -> **Connect to Git** and select your GitHub repository.
 3. **Framework preset:** `Next.js` | **Build command:** `npm run build`
-4. **Environment variables (advanced)** में यह 2 चीज़ें डालें:
-   * **`DATABASE_URL`** (✅ Required - आपका Neon Postgres URL)
-   * **`ADMIN_SECRET_TOKEN`** (✅ Required - डैशबोर्ड खोलने के लिए आपका मनपसंद पासवर्ड)
+4. Under **Environment variables (advanced)** add these 2 items:
+   * **`DATABASE_URL`** (✅ Required - Your Neon Postgres URL)
+   * **`ADMIN_SECRET_TOKEN`** (✅ Required - Your chosen password to open the dashboard)
 
-> **नोट (Safely):** अगर आप डिप्लॉय करते समय इन्हें डालना भूल गए हैं, तो डिप्लॉयमेंट के बाद **Cloudflare Pages -> Settings -> Variables and secrets** में जाकर इन्हें Add कर सकते हैं (जैसा कि स्क्रीनशॉट में दिखाया गया है)।
+> **Note (Safely):** If you forgot to add these during deployment, you can add them later by going to **Cloudflare Pages -> Settings -> Variables and secrets**.
 
-**Final Step:** डिप्लॉय होने के बाद, अपना नया डैशबोर्ड URL खोलें, **"⚙️ Settings & AI"** टैब में जाएँ और **"🚀 Initialize Database Tables"** बटन पर क्लिक करें। आपका काम पूरा! 🎉
+**Final Step:** After deployment, open your new dashboard URL, go to the **"⚙️ Settings & AI"** tab, and click the **"🚀 Initialize Database Tables"** button. You're all set! 🎉
 
 ---
 
