@@ -16,6 +16,15 @@
 
 ---
 
+## 📚 Documentation & Setup Guides
+
+Everything you need to set up, configure, and safely run your AutoFlow IG is linked here:
+- 📖 **[English Setup Guide](./SETUP_GUIDE_EN.md)** (Step-by-step instructions from zero to live)
+- 📖 **[हिंदी सेटअप गाइड (Hindi Setup Guide)](./SETUP_GUIDE_HI.md)** (शून्य से लाइव तक की पूरी जानकारी)
+- 🛡️ **[Meta Policy Compliance Architecture](./META_POLICY_COMPLIANCE.md)** (How this app prevents bans and follows Meta rules)
+
+---
+
 ## ⚡ Deploy in Seconds (1-Click Setup)
 
 Deploy your own Instagram DM Automation SaaS in seconds - **no coding or laptop required**.
