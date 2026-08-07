@@ -105,4 +105,17 @@ Ab aapko code me AI keys (OpenAI, Gemini) daalne ki zarurat nahi hai!
 
 *Magic:* Ye key automatically `ADMIN_SECRET_TOKEN` ka use karke encrypt (lock) ho jayegi aur Neon Database me save ho jayegi. Cloudflare worker comment aane par isey automatically unlock karke use karega. 
 
+---
+
+## 🌟 Step 7: Advanced Features (Naye Features)
+
+### 1. Soft Follow Gate (Require Follow First)
+- Ab aap chahein to user ko DM link dene se pehle Follow karne ke liye keh sakte hain!
+- **Kaise use karein:** Admin Dashboard mein, "Edit Rule" ke andar **"Require Follow First"** ka toggle chalu (ON) kar dein.
+- **Ye kaise kaam karta hai:** Jab user comment karta hai to bot use direct link ki jagah ek "Gate" message bhejta hai jisme do buttons hote hain: `[ Visit Profile ]` aur `[ I'm following ✅ ]`. Jaise hi user click karega "I'm following", use turant original DM mil jayega!
+
+### 2. Smart 7-Day Follow-ups (Cron Job)
+- System apne aap un logo ko follow-up bhejega jinhone pehle interact kiya tha.
+- **Ye kaise kaam karta hai:** Cloudflare Worker ek Cron Job run karta hai jo database check karta hai. Jinhone theek 7 din pehle interact kiya tha aur link check nahi kiya, unhe ye soft follow-up bhejta hai. Ye aapke Cloudflare free limits ka sirf 0.024% use karta hai, matlab 100% Free!
+
 **Congratulations! Aapka Production-Grade, Encrypted, aur Viral-Proof System live hai! 🎉**

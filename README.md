@@ -139,6 +139,16 @@ Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**. (
 - **Search by username** — filter through large lead lists
 - **Build an Instagram lead list just like an email list**
 
+### 5.1 🔒 Soft Follow Gate (Require Follow)
+- **Problem Solved:** Want to grow followers before giving away the link?
+- **How it works:** When enabled, the bot replies to the comment with a "Gate" message containing two buttons: `[ Visit Profile ]` and `[ I'm following ✅ ]`. 
+- **Psychological Trigger:** The user feels compelled to follow, clicks "I'm following", and the worker instantly delivers the final link!
+
+### 5.2 ⏳ 7-Day Smart Follow-ups (Cron Job)
+- The Cloudflare Worker automatically runs a daily cron job.
+- It finds users who engaged exactly **7 days ago** and sends them a polite follow-up DM.
+- Fully automated, runs within Cloudflare's free tier limits (only 0.024% usage).
+
 ### 6. 🤖 AI Smart Auto-Replies (New)
 - **Dynamic Human-like DMs:** Use any OpenAI-compatible API (OpenAI, Groq, Claude proxy) to send natural replies.
 - **Context Aware:** AI generates the message combining the user's comment, trigger keyword, and your link.
