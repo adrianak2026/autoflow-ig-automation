@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**Ek Reel Upload karo → Comment keyword/emoji set karo → Commenters ko automatically Private DM chali jaaye**
+**Upload a Reel → Set a keyword/emoji → Automatically send a Private DM to commenters**
 
 [![Deploy Status](https://img.shields.io/badge/Deploy-Cloudflare%20Workers-orange?logo=cloudflare)](https://workers.cloudflare.com)
 [![Database](https://img.shields.io/badge/Database-Neon%20Postgres-green?logo=postgresql)](https://neon.tech)
@@ -16,34 +16,36 @@
 
 ---
 
-🔥 **[naya user hai? SETUP_GUIDE.md (Hinglish) padhein setup aur deployment ke liye yahan click karein!](./SETUP_GUIDE.md)** 🔥
-
-## 🎯 Yeh App Kya Karta Hai?
-
-**AutoFlow IG** ek **serverless Instagram DM Automation system** hai jo tumhare Instagram Reels, Posts, aur Stories ko automatic lead generation machine mein convert karta hai.
-
-### Real-World Example:
-
-> **Tum ek Reel post karte ho aur caption mein likhte ho:**
-> *"Agar tumhe is tool ka link chahiye to comment mein kuch bhi likho, main DM kar dunga 🔥"*
->
-> ✅ Jaise hi koi comment karta hai (chahe "link", "majak", "tool", "🔥", "❤️" — kuch bhi) —
-> **AutoFlow IG automatically us user ko Private DM bhej deta hai** jisme tumhara desired link hota hai.
->
-> **Tum so rahe ho, AutoFlow IG kaam kar raha hota hai.**
-
-### 100+ Reels ke saath bhi kaam karta hai:
-
-> **Reel #1** (AI Tool) → keyword "majak" → Link A ka DM
-> **Reel #2** (Online Course) → keyword "course" → Link B ka DM
-> **Reel #50** (Old Reel) → "Any Comment" mode → Link C ka DM
->
-> ✅ Har Reel ka apna campaign hota hai. Webhook mein `media_id` match hoti hai —
-> **sirf us reel ka template trigger hota hai, koi cross-mixing nahi.**
+🔥 **[Setup Guide (English)](./SETUP_GUIDE_EN.md)** | **[सेटअप गाइड (Hinglish)](./SETUP_GUIDE_HI.md)** 🔥
 
 ---
 
-## 🏆 Kis Tool Ki Takkar Mein Hai?
+## 🎯 What Does This App Do?
+
+**AutoFlow IG** is a **serverless Instagram DM Automation system** that converts your Instagram Reels, Posts, and Stories into an automatic lead generation machine.
+
+### Real-World Example:
+
+> **You post a Reel and write in the caption:**
+> *"Comment 'tool' if you want the link, and I will DM it to you 🔥"*
+>
+> ✅ The moment someone comments (whether it's "link", "tool", "🔥", "❤️" — anything you set) —
+> **AutoFlow IG automatically sends a Private DM to that user** containing your desired link.
+>
+> **You are sleeping, AutoFlow IG is working.**
+
+### Works Flawlessly with 100+ Reels:
+
+> **Reel #1** (AI Tool) → keyword "tool" → Link A DM
+> **Reel #2** (Online Course) → keyword "course" → Link B DM
+> **Reel #50** (Old Reel) → "Any Comment" mode → Link C DM
+>
+> ✅ Each Reel has its own isolated campaign. The webhook matches the `media_id` —
+> **only that specific reel's template is triggered, no cross-mixing.**
+
+---
+
+## 🏆 How Does It Compare?
 
 | Feature | **AutoFlow IG** | ManyChat | Manychat Free | Respond.io | Zapier |
 |---|---|---|---|---|---|
@@ -57,101 +59,90 @@
 | **Human Handoff Pause** | ✅ Yes (1-hour pause)| ❌ No | ❌ No | ✅ Paid | ❌ No |
 | **Lead Capture Database** | ✅ Neon Postgres | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
 | **CSV Export (Leads)** | ✅ Yes | ✅ Paid | ❌ No | ✅ Paid | ❌ No |
-| **Monthly Cost** | **🆓 ₹0 Free** | 💸 ₹1,000–5,000/mo | ₹0 Limited | 💸 ₹3,000+/mo | 💸 ₹2,000+/mo |
+| **Monthly Cost** | **🆓 $0 Free** | 💸 $15–$50/mo | $0 Limited | 💸 $49+/mo | 💸 $20+/mo |
 | **Self-hosted** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Own Data** | ✅ Yes (Neon DB) | ❌ Their servers | ❌ Their servers | ❌ Their servers | ❌ Their servers |
 | **Custom Domain** | ✅ workers.dev | ✅ | ✅ | ✅ | ✅ |
 | **Speed** | ⚡ Sub-50ms Edge | ~500ms | ~500ms | ~300ms | ~1000ms |
 
-> **Bottom Line:** ManyChat ka jo kaam ₹1,000–₹5,000/month mein hota hai, AutoFlow IG wahi kaam **₹0 mein** karta hai — apna data apne control mein rakho.
+> **Bottom Line:** AutoFlow IG does what a $50/month tool does, but for **$0**, and you own all your data on your own cloud database.
 
 ---
 
-## 🚀 Kya-Kya Karta Hai (Features)
+## 🚀 Key Features
 
 ### 1. 🎬 Reel Comment → Auto DM (Core Feature)
-- Apni Instagram Reel ka link paste karo
-- Custom keywords set karo: `majak`, `tool`, `link`, `price`, kuch bhi
-- Custom emojis set karo: `🔥`, `❤️`, `👇`, `💯`
-- **Jab bhi koi comment karega → user ko automatically Private DM jaayegi** jisme tumhara link hoga
-- `{username}` aur `{keyword}` variables DM message mein use kar sakte ho
+- Paste your Instagram Reel link
+- Set custom keywords: `tool`, `link`, `price`, etc.
+- Set custom emojis: `🔥`, `❤️`, `👇`, `💯`
+- **Whenever someone comments → the user automatically gets a Private DM** with your link.
+- You can use `{username}` and `{keyword}` variables in the DM message.
 
 ### 2. 🔄 "Any Comment" Mode — Zero Keyword Required
-- Campaign create karte waqt **"Any Comment"** mode select karo
-- Ab **koi bhi comment kare — DM chali jaayegi**, chahe comment mein kuch bhi likha ho
-- Reel caption mein likho: *"Kuch bhi comment karo, main link DM kar dunga"*
-- Keywords daalne ki zarurat bilkul nahi
+- Select **"Any Comment"** mode when creating a campaign.
+- Now **any comment will trigger the DM**, regardless of what is written.
+- Ideal for captions like: *"Comment anything, and I'll DM you the link"*
 
 ### 3. 🎯 Per-Reel Campaign Matching (Multi-Reel Support)
-- **Problem Solve:** 100+ reels banao — har reel ka apna campaign hoga
-- Har campaign mein **Instagram Media ID** store karo
-- Jab webhook aata hai → worker `media_id` se exact matching campaign dhundta hai Neon DB mein
-- **Sirf us reel ka DM template use hota hai** — koi cross-mixing nahi
-- Media ID nahi diya → global defaults use honge (backwards compatible)
+- **Problem Solved:** Create 100+ reels — each reel gets its own campaign.
+- Store the **Instagram Media ID** in each campaign.
+- When a webhook arrives → the worker matches the exact campaign via `media_id` in Neon DB.
+- **Only that reel's DM template is used** — no cross-mixing of links.
 
 ### 4. 📸 Story Mention → Auto DM Reward
-- Jab koi apni Story mein tumhara account mention kare
-- **Automatically usse Thank you DM + CTA button link jaata hai**
-- Story mentions ko leads mein convert karo
-- Story triggers ko browser se Add / Delete karo
+- When someone mentions your account in their Story.
+- **They automatically receive a Thank You DM + CTA button link.**
+- Convert story mentions into leads instantly.
+- Manage Story triggers directly from the browser dashboard.
 
 ### 5. 👥 Lead Database (Captured Subscribers)
-- Har commenter ka Instagram username Neon DB mein save hota hai
-- Engagement count track hota hai
-- Email capture ready (future feature)
-- **CSV Export** — ek click mein saari leads `.csv` mein download
-- **Search by username** — bade lead lists ko filter karo
-- **Apni email list ki tarah Instagram lead list banao**
+- Every commenter's Instagram username is saved into the Neon DB.
+- Tracks engagement count automatically.
+- **CSV Export** — download all your leads as a `.csv` with one click.
+- **Search by username** — filter through large lead lists.
+- **Build an Instagram lead list just like an email list.**
 
-### 6. 🤖 AI Smart Auto-Replies (New)
+### 6. 🤖 AI Smart Auto-Replies
 - **Dynamic Human-like DMs:** Use any OpenAI-compatible API (OpenAI, Groq, Claude proxy) to send natural replies.
-- **Context Aware:** AI generates the message combining the user's comment, trigger keyword, and your link.
+- **Context Aware:** AI generates the message by combining the user's comment, trigger keyword, and your link.
 - **Edge Compatible:** Cloudflare worker directly talks to the AI endpoint; no extra DB roundtrip needed for generation.
 - **Dynamic Model Fetching:** Instantly fetches available models via the UI.
 
-### 7. 👤 Human Handoff (1-Hour Pause) & Spam Protection (New)
-- **Spam Protection:** Agar ek hi user bar-bar comment karta hai, to system use **maximum 3 baar hi auto-DM** bhejega (24 hours ke andar). Isse apke API limits aur database safe rehte hain.
-- **Human Handoff:** Agar tum manually (browser/app) se kisi ko reply karte ho (which triggers `is_echo: true`), **AutoFlow IG automatically us user ke liye 1 hour ke liye pause ho jaata hai.**
-- Taki AI aur tumhara message clash na ho.
+### 7. 👤 Human Handoff (1-Hour Pause) & Spam Protection
+- **Spam Protection:** If a user repeatedly comments, the system sends a **maximum of 3 auto-DMs** (per reel, per 24 hours). This keeps your API limits and database safe.
+- **Human Handoff:** If you manually reply to someone from the browser/app (which triggers `is_echo: true`), **AutoFlow IG automatically pauses for that user for 1 hour.**
+- This prevents the AI and your manual message from clashing.
 
 ### 8. 📊 Stats Dashboard — Live Campaign Overview
 - **Total Rules** count
-- **Active vs Paused** rules ka breakdown
+- **Active vs Paused** rules breakdown
 - **Any-Comment Rules** count
-- Live badges — Neon DB se real-time data
+- Live badges fetching real-time data from Neon DB.
 
 ### 9. ✏️ Browser-Based Campaign Manager — Full CRUD
-- Browser se Reel rules **Add / Edit / Rename / Delete** karo
-- **⏸ Pause / ▶ Activate** — campaign band karo bina delete kiye
-- **📋 Copy DM** — DM template clipboard mein copy karo (2 sec feedback)
-- **🔁 Duplicate** — ek campaign ka copy banao naye reel ke liye
-- **🔍 Search** — campaign list mein naam ya keyword se filter karo
-- **🔄 Refresh** — list instantly refresh karo
-- **Koi coding nahi, koi server nahi — seedha dashboard se manage karo**
-- **Admin Password Protection** — sirf tum manage kar sako
+- **Add / Edit / Rename / Delete** reel rules straight from the browser.
+- **⏸ Pause / ▶ Activate** — turn off campaigns without deleting them.
+- **📋 Copy DM** — copy your DM template to the clipboard instantly.
+- **🔁 Duplicate** — create a copy of a campaign for a new reel easily.
+- **🔍 Search** — filter the campaign list by name or keyword.
+- **No coding, no servers — manage directly from the dashboard.**
+- **Admin Password Protection** — secure login so only you can manage it.
 
 ### 10. ⚡ Live Keyword Matcher Tester
-- Koi bhi comment text daalo → instantly dekho ki DM trigger hogi ya nahi
-- Partial, Word, aur Any mode test karo
-- Test logs Neon DB mein save hote hain history ke liye
+- Type any comment text → instantly see if a DM would trigger.
+- Test Partial, Word, and Any match modes.
+- Test logs are saved to Neon DB for historical tracking.
 
 ### 11. 🔒 Production Security & Encryption (15+ Layers)
-- **AES-256-GCM Encryption (New):** All sensitive configurations (like AI API Keys) are encrypted before hitting the database using your `ADMIN_SECRET_TOKEN` as the master key. Even if the Neon DB is compromised, hackers get only scrambled text.
-- **Strict HTTP Security Headers:** Enforced HSTS (Strict-Transport-Security), XSS Protection, CSP, and X-Frame-Options on all routes via `next.config.ts`.
-- Bearer Token API authentication (Admin-only actions)
-- HMAC-SHA256 Meta Webhook Signature Verification
-- Rate limiting per-IP (KV-backed sliding window)
-- Replay attack prevention (5-min event age check)
-- Input validation + length limits (SQL injection prevention)
-- Zlib compression for DM templates in DB
-- Self-comment filter (worker apne aap ko DM nahi karta)
-- Fail-closed architecture (secrets not set = app refuses to start)
-- Zod schema validation on all webhook payloads
-- Admin secret + Admin user/pass dual-layer auth
-- UUID primary keys for user-facing tables
-- ENUM types for match_mode (no invalid values)
-- JSONB settings column for future extensibility
-- Rate-limited token API with brute force protection
+- **AES-256-GCM Encryption:** All sensitive configurations (like AI API Keys) are encrypted before hitting the database using your `ADMIN_SECRET_TOKEN` as the master key. Even if the Neon DB is compromised, hackers get only scrambled ciphertext.
+- **Strict HTTP Security Headers:** Enforced HSTS (Strict-Transport-Security), XSS Protection, CSP, and X-Frame-Options on all routes.
+- Bearer Token API authentication (Admin-only actions).
+- HMAC-SHA256 Meta Webhook Signature Verification.
+- Rate limiting and Replay attack prevention (5-min event age check).
+- Input validation + length limits (SQL injection prevention).
+- Zlib compression for DM templates in DB.
+- Self-comment filter (the worker doesn't DM your own account).
+- Zod schema validation on all webhook payloads.
 
 ---
 
@@ -191,215 +182,29 @@ sequenceDiagram
 |---|---|---|
 | **Edge Runtime** | Cloudflare Workers | Sub-50ms worldwide, 100K req/day free |
 | **Frontend** | Next.js 16 + React | Modern dashboard UI |
-| **Database** | Neon Postgres (Serverless) | 512MB free, auto-suspend = ₹0 idle cost |
+| **Database** | Neon Postgres (Serverless) | 512MB free, auto-suspend = $0 idle cost |
 | **ORM** | Drizzle ORM | Type-safe, lightweight, edge-compatible |
-| **Auth** | Custom Bearer Token + Rate Limiter | No external dependency |
+| **Auth** | Custom Bearer Token | No external dependency |
 | **DB Driver** | `@neondatabase/serverless` (HTTP) | Works on Cloudflare edge without TCP |
 | **Compression** | Zlib BYTEA | DM templates compressed in DB |
 | **Validation** | Zod | Runtime schema validation on webhooks |
 | **KV Store** | Cloudflare KV | Rate limiting + analytics events |
 | **Per-Reel Lookup** | Neon HTTP API in Worker | media_id → campaign matching at edge |
 
-### Database Schema (Neon Postgres)
-
-```
-automation_campaigns         ← Reel DM rules (core table)
-  id                         Serial PK
-  name                       Campaign name
-  trigger_keywords           Comma-separated keywords/emojis
-  reply_template             DM message (Zlib compressed BYTEA)
-  match_mode                 ENUM: 'partial' | 'word' | 'any'
-  is_active                  Boolean (pause/activate without delete)
-  reel_url                   Instagram Reel URL (for display)
-  reel_media_id              Instagram numeric media ID (for webhook matching)
-  total_dms_sent             Counter
-  total_comments             Counter
-  created_at / updated_at    Timestamps
-
-story_triggers               ← Story mention auto-DM rules
-  id                         UUID PK
-  trigger_name               Rule name
-  dm_reply_template          DM message
-  cta_button_url             CTA link
-
-lead_subscribers             ← Auto-captured Instagram leads
-  id                         UUID PK
-  instagram_username         IG handle
-  captured_email             (optional)
-  source_campaign            Which rule triggered the capture
-  engagement_count           How many times engaged
-  last_engaged_at            Last activity timestamp
-
-test_match_logs              ← Live tester history
-  id                         UUID PK
-  comment_text               Tested comment
-  matched                    Boolean
-  matched_keyword            Which keyword matched
-  rendered_dm                What DM would have been sent
-
-system_settings              ← AI configuration and global settings
-  id                         UUID PK
-  key                        String (e.g., 'ai_config')
-  value                      JSONB
-  updated_at                 Timestamp
-```
-
 ---
 
-## Setup Guide (5 Environment Variables)
+## Setup Guide
 
-### 1. DATABASE_URL — Neon Postgres Connection
+Please refer to our detailed step-by-step Setup Guides to deploy your own instance for free:
 
-> **Kahan milega:** https://console.neon.tech → Project → Connection Details
-
-```
-postgresql://user:pass@ep-xyz.us-east-2.aws.neon.tech/neondb?sslmode=require
-```
-
-> Important: Yeh secret ab **Cloudflare Worker mein bhi set karo** — worker per-reel campaign lookup ke liye Neon DB query karta hai.
->
-> ```bash
-> wrangler secret put DATABASE_URL
-> ```
-
-### 2. VERIFY_TOKEN — Webhook Secret (Tum khud banao)
-
-> Meta aapke webhook URL ko verify karne ke liye yeh token use karta hai.
-
-```
-autoflow_webhook_secret_2026
-```
-
-### 3. WEBHOOK_APP_SECRET — Meta HMAC Key
-
-> **Kahan milega:** developers.facebook.com/apps → App Settings → Basic → App Secret
-
-```
-a1b2c3d4e5f67890123456789abcdef0
-```
-
-### 4. IG_ACCESS_TOKEN — Instagram Graph API Token
-
-> **Kahan milega:** developers.facebook.com/tools/explorer
->
-> Required Permissions:
-> - instagram_basic
-> - instagram_manage_comments
-> - instagram_manage_messages
-> - pages_manage_metadata
-
-```
-EAABb...your_long_lived_token
-```
-
-### 5. Admin Credentials (Dashboard Security)
-
-Set these as Cloudflare Worker secrets:
-
-```bash
-wrangler secret put ADMIN_USER         # Your admin username
-wrangler secret put ADMIN_PASS         # Your admin password
-wrangler secret put ADMIN_SECRET_TOKEN # Random 32+ char secret (openssl rand -hex 32)
-```
-
----
-
-## 🚀 Deploy Karo (1 Command)
-
-```bash
-# 1. Clone karo
-git clone https://github.com/adrianak2026/autoflow-ig-automation.git
-cd autoflow-ig-automation
-
-# 2. Dependencies install karo
-npm install
-
-# 3. Ek click mein deploy
-npm run deploy
-```
-
-Yeh automatically:
-1. Neon Postgres migrations apply karta hai
-2. Cloudflare Worker secrets configure karta hai
-3. Worker ko live deploy karta hai
-
-### DB Migrations (Run Manually if Needed)
-
-```bash
-npx drizzle-kit migrate
-```
-
-Migration files in `drizzle/`:
-- `0000_initial_schema.sql` — Base tables (users, campaigns, leads)
-- `0001_story_triggers.sql` — Story mention rules
-- `0002_test_logs.sql` — Live tester history logs
-- `0003_reel_url_any_mode.sql` — Reel URL column + any match mode
-- `0004_reel_media_id.sql` — Per-reel Instagram media ID matching
-
----
-
-## 🔗 Meta Webhook Setup
-
-Deploy ke baad apna Worker URL milega:
-```
-https://autoflow-ig-worker.<your-subdomain>.workers.dev/webhook
-```
-
-1. Meta Developer Console (developers.facebook.com/apps) kholo
-2. **Webhooks** → **Instagram** → **Subscribe**
-3. Daalo:
-   - **Callback URL**: upar wala URL
-   - **Verify Token**: tumhara VERIFY_TOKEN
-4. Subscribe fields mein tick karo: `comments`, `messages`, `mention`
-
----
-
-## Instagram Media ID Kaise Nikale (Per-Reel Matching)
-
-Per-reel matching ke liye har campaign mein Instagram Media ID (numeric) daalna zaroori hai.
-
-### Method 1 — Graph API Explorer (Recommended)
-
-1. developers.facebook.com/tools/explorer kholo
-2. Request: `GET /me/media?fields=id,caption,media_type&limit=50`
-3. Response mein har Reel/Post ka `"id"` milega → Dashboard mein paste karo
-
-### Method 2 — API Call
-
-```bash
-curl "https://graph.facebook.com/v19.0/me/media?fields=id,caption&access_token=YOUR_TOKEN"
-```
-
-Response:
-```json
-{
-  "data": [
-    { "id": "17841234567890123", "caption": "AI Tool Reel" },
-    { "id": "17841987654321000", "caption": "Course Launch Reel" }
-  ]
-}
-```
-
-Dashboard mein: Campaign banate waqt → **Instagram Media ID** field mein numeric ID paste karo
-
-> **Note:** Media ID nahi diya → sirf global env-var defaults use honge (backward compatible). Sab reels par same DM jaayegi. ID dene par sirf us specific reel ka campaign trigger hota hai.
-
----
-
-## 📊 Free Tier Limits
-
-| Service | Free Limit | AutoFlow IG Usage |
-|---|---|---|
-| Cloudflare Workers | 100,000 req/day | ~1 req per comment → safe for 100K comments/day |
-| Neon Postgres | 512 MB storage | Text data only → safe for 500,000+ lead records |
-| Meta Graph API | Standard limits | 200 DMs/hour per account |
-| Cloudflare KV | 100K reads/day | Rate limiting + analytics |
+- 🇺🇸 **[English Setup & Deployment Guide](./SETUP_GUIDE_EN.md)**
+- 🇮🇳 **[Hinglish Setup & Deployment Guide](./SETUP_GUIDE_HI.md)**
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 autoflow-ig-automation/
 ├── src/
 │   ├── app/
@@ -432,36 +237,6 @@ autoflow-ig-automation/
 
 ---
 
-## 🎛️ Dashboard Tabs — Kya Hai Kahan
-
-### Tab 1: Reel Campaign Builder
-- Stats cards (Total / Active / Paused / Any-Comment rules)
-- Campaign create form with Reel URL, Media ID, Trigger Mode, Keywords, DM Template
-- Campaign list with search filter
-- Per-card actions: Pause / Activate / Edit / Copy DM / Duplicate / Delete
-
-### Tab 2: Story Mention Auto-DM
-- Story trigger rules create karo (naam + DM template + CTA URL)
-- Existing rules list with Delete button
-
-### Tab 3: Leads & Subscribers
-- Auto-captured Instagram lead table
-- Search by username
-- Export CSV — download all leads as .csv
-
-### Tab 4: Live Match Tester
-- Simulate any comment text
-- Test against keyword rules in real-time
-- View rendered DM template output
-- Test logs saved to Neon DB
-
-### Tab 5: AI Configuration (New)
-- Provide Custom Provider, API Key, and Model Name (e.g. OpenAI, Claude, Groq)
-- Fetch available models straight from the provider
-- Enable/Disable AI overriding for smarter natural replies
-
----
-
 ## 🙏 Acknowledgments
 
 - [Cloudflare Workers](https://workers.cloudflare.com/) — For the blazing fast serverless edge runtime.
@@ -479,8 +254,8 @@ autoflow-ig-automation/
 
 <div align="center">
 
-**Built with love for Indian Creators who want ManyChat power at zero cost**
+**Built with love for Creators who want Enterprise power at Zero cost**
 
-*AutoFlow IG — Apna data, apna control, zero cost*
+*AutoFlow IG — Own your data, own your audience.*
 
 </div>
