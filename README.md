@@ -439,6 +439,7 @@ autoflow-ig-automation/
 - [Neon Postgres](https://neon.tech/) — For the scalable, serverless, and free tier database.
 - [Next.js](https://nextjs.org/) — For the modern React framework driving our dashboard.
 - [Drizzle ORM](https://orm.drizzle.team/) — For making database interactions fully type-safe and edge-compatible.
+- [Meta / Instagram Graph API](https://developers.facebook.com/) — For providing the robust webhook ecosystem and Messaging API.
 
 ---
 
