@@ -10,9 +10,11 @@ type Campaign = {
   matchMode: string;
   isActive: boolean;
   reelUrl: string | null;
+  reelMediaId: string | null;
   totalDmsSent: number;
   createdAt: string;
 };
+
 
 type StoryTrigger = {
   id: number;
