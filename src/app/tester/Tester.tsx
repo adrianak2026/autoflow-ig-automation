@@ -401,59 +401,55 @@ export default function Tester() {
 
 
       {/* Navigation Tabs */}
-
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/5 shadow-inner">
         <button
           onClick={() => setActiveTab("builder")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
             activeTab === "builder"
-              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-              : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
+              ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-[0_0_20px_-5px_rgba(99,102,241,0.5)] scale-[1.02]"
+              : "text-slate-400 hover:bg-white/5 hover:text-white"
           }`}
         >
           <span>🎬 Reel Custom Rules</span>
-          <span className="rounded-full bg-indigo-400/20 px-2 py-0.5 text-[10px] text-indigo-300 font-bold">
-            {campaigns.length} Saved in Neon DB
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${activeTab === 'builder' ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-300'}`}>
+            {campaigns.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab("story")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
             activeTab === "story"
-              ? "bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-600/30"
-              : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
+              ? "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-[0_0_20px_-5px_rgba(217,70,239,0.5)] scale-[1.02]"
+              : "text-slate-400 hover:bg-white/5 hover:text-white"
           }`}
         >
-          <span>📸 Story Mention DM Auto-Reply</span>
-          <span className="rounded-full bg-fuchsia-400/20 px-2 py-0.5 text-[10px] text-fuchsia-300 font-bold">
-            {stories.length} Rules
+          <span>📸 Story DMs</span>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${activeTab === 'story' ? 'bg-white/20 text-white' : 'bg-fuchsia-500/20 text-fuchsia-300'}`}>
+            {stories.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab("leads")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
             activeTab === "leads"
-              ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30"
-              : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)] scale-[1.02]"
+              : "text-slate-400 hover:bg-white/5 hover:text-white"
           }`}
         >
-          <span>👥 Captured Leads DB</span>
-          <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] text-emerald-300 font-bold">
-            Neon DB
-          </span>
+          <span>👥 Captured Leads</span>
         </button>
 
         <button
           onClick={() => setActiveTab("tester")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
             activeTab === "tester"
-              ? "bg-slate-700 text-white shadow-lg"
-              : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white"
+              ? "bg-slate-700 text-white shadow-[0_0_20px_-5px_rgba(255,255,255,0.2)] scale-[1.02]"
+              : "text-slate-400 hover:bg-white/5 hover:text-white"
           }`}
         >
-          <span>⚡ Live Match Tester</span>
+          <span>⚡ Live Tester</span>
         </button>
       </div>
 
@@ -462,12 +458,13 @@ export default function Tester() {
         <div className="space-y-5">
 
           {/* Stats Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-center">
-              <div className="text-2xl font-black text-indigo-300">{campaigns.length}</div>
-              <div className="text-[10px] font-semibold uppercase text-slate-400 mt-0.5">Total Rules</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 text-center backdrop-blur-sm transition-all hover:bg-indigo-500/10 hover:border-indigo-500/40 hover:-translate-y-0.5 shadow-lg">
+              <div className="absolute -left-10 -top-10 h-24 w-24 rounded-full bg-indigo-500/10 blur-2xl" />
+              <div className="relative z-10 text-3xl font-black text-indigo-300 drop-shadow-md">{campaigns.length}</div>
+              <div className="relative z-10 text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Total Rules</div>
             </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center backdrop-blur-sm transition-all hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:-translate-y-0.5 shadow-lg">
               <div className="text-2xl font-black text-emerald-300">{campaigns.filter(c => c.isActive).length}</div>
               <div className="text-[10px] font-semibold uppercase text-slate-400 mt-0.5">Active Rules</div>
             </div>
