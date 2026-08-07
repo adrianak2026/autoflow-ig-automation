@@ -144,6 +144,9 @@ Your frontend dashboard will also be hosted 100% free on **Cloudflare Pages**. (
 - **How it works:** When enabled, the bot replies to the comment with a "Gate" message containing two buttons: `[ Visit Profile ]` and `[ I'm following ✅ ]`. 
 - **Psychological Trigger:** The user feels compelled to follow, clicks "I'm following", and the worker instantly delivers the final link!
 
+> [!WARNING]  
+> **Note: This is a psychological trick (a "fake" check).** The Meta Graph API does *not* allow checking if a specific user follows you. The system relies entirely on the user clicking the "I'm following ✅" button to proceed.
+
 ### 5.2 ⏳ 7-Day Smart Follow-ups (Cron Job)
 - The Cloudflare Worker automatically runs a daily cron job.
 - It finds users who engaged exactly **7 days ago** and sends them a polite follow-up DM.

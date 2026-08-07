@@ -114,6 +114,9 @@ Ab aapko code me AI keys (OpenAI, Gemini) daalne ki zarurat nahi hai!
 - **Kaise use karein:** Admin Dashboard mein, "Edit Rule" ke andar **"Require Follow First"** ka toggle chalu (ON) kar dein.
 - **Ye kaise kaam karta hai:** Jab user comment karta hai to bot use direct link ki jagah ek "Gate" message bhejta hai jisme do buttons hote hain: `[ Visit Profile ]` aur `[ I'm following ✅ ]`. Jaise hi user click karega "I'm following", use turant original DM mil jayega!
 
+> [!WARNING]  
+> **Note: Ye ek Psychological Trick ("fake" check) hai.** Meta Graph API directly kisi user ka follow status check karne ki permission nahi deta. Ye feature poori tarah se user ke "I'm following ✅" button dabane par nirbhar karta hai.
+
 ### 2. Smart 7-Day Follow-ups (Cron Job)
 - System apne aap un logo ko follow-up bhejega jinhone pehle interact kiya tha.
 - **Ye kaise kaam karta hai:** Cloudflare Worker ek Cron Job run karta hai jo database check karta hai. Jinhone theek 7 din pehle interact kiya tha aur link check nahi kiya, unhe ye soft follow-up bhejta hai. Ye aapke Cloudflare free limits ka sirf 0.024% use karta hai, matlab 100% Free!

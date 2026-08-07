@@ -114,6 +114,9 @@ You DO NOT need to put AI keys in the code anymore!
 - **How to use:** In the Admin Dashboard, under "Edit Rule", turn on the **"Require Follow First"** toggle.
 - **How it works:** Instead of sending the direct link, the bot sends a psychological "Gate" message with two buttons: `[ Visit Profile ]` and `[ I'm following ✅ ]`. Once they click the second button, the bot instantly delivers the link!
 
+> [!WARNING]  
+> **Note: This is a psychological trick (a "fake" check).** The Meta Graph API does *not* allow checking if a specific user follows you. The system relies entirely on the user clicking the "I'm following ✅" button to proceed.
+
 ### 2. Smart 7-Day Follow-ups (Cron Job)
 - The system automatically follows up with leads who haven't engaged further.
 - **How it works:** The Cloudflare worker runs a Cron Trigger that checks your database for users who interacted exactly 7 days ago. It sends them a polite follow-up message. This uses just 0.024% of your daily Cloudflare free tier quota, ensuring 100% free operation!
