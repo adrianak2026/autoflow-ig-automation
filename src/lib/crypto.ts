@@ -54,9 +54,9 @@ export async function encryptSymmetric(text: string, secret: string): Promise<st
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: iv },
+    { name: "AES-GCM", iv: iv as any },
     key,
-    encoded
+    encoded as any
   );
 
   return `${buf2hex(iv.buffer)}:${buf2hex(ciphertext)}`;
@@ -79,9 +79,9 @@ export async function decryptSymmetric(encrypted: string, secret: string): Promi
     const key = await deriveKey(secret);
 
     const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: iv },
+      { name: "AES-GCM", iv: iv as any },
       key,
-      ciphertext
+      ciphertext as any
     );
 
     const dec = new TextDecoder();
