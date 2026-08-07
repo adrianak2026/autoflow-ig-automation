@@ -64,6 +64,7 @@ export async function POST(req: Request) {
         matchMode: sanitizeMatchMode(matchMode),
         reelUrl: body.reelUrl ? String(body.reelUrl).slice(0, MAX_URL_LEN).trim() : null,
         reelMediaId: body.reelMediaId ? String(body.reelMediaId).replace(/\D/g, "").slice(0, 30) : null,
+        settings: { requireFollow: !!body.requireFollow },
         isActive: true,
       })
       .returning();
@@ -79,7 +80,7 @@ export async function PUT(req: Request) {
   if (!verifyAdminToken(req)) return unauthorizedResponse();
   try {
     const body = await req.json();
-    const { id, name, triggerKeywords, replyTemplate, matchMode, isActive } = body;
+    const { id, name, triggerKeywords, replyTemplate, matchMode, isActive, requireFollow } = body;
 
     if (!id || isNaN(Number(id))) {
       return NextResponse.json({ error: "Valid campaign ID required for update" }, { status: 400 });
@@ -95,6 +96,7 @@ export async function PUT(req: Request) {
         ...(typeof isActive === "boolean" && { isActive }),
         ...("reelUrl" in body && { reelUrl: body.reelUrl ? String(body.reelUrl).slice(0, MAX_URL_LEN).trim() : null }),
         ...("reelMediaId" in body && { reelMediaId: body.reelMediaId ? String(body.reelMediaId).replace(/\D/g, "").slice(0, 30) : null }),
+        ...(typeof requireFollow === "boolean" && { settings: { requireFollow } }),
         updatedAt: new Date(),
       })
       .where(eq(automationCampaigns.id, Number(id)))

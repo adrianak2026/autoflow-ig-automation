@@ -86,6 +86,48 @@ const SECURITY_HEADERS = {
 
 /* ---------------- Entry point ---------------- */
 export default {
+  async scheduled(event, env, ctx) {
+    if (!env.DATABASE_URL) return;
+    try {
+      const pgUrl = new URL(env.DATABASE_URL);
+      const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
+      
+      const query = `
+        SELECT instagram_username, source_campaign
+        FROM lead_subscribers
+        WHERE last_engaged_at >= NOW() - INTERVAL '7 days'
+          AND last_engaged_at < NOW() - INTERVAL '6 days 23 hours'
+          AND (metadata->>'followup_sent') IS NULL
+      `;
+      const res = await fetch(neonHttpUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${pgUrl.password}` },
+        body: JSON.stringify({ query })
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const rows = data.rows || [];
+      
+      for (const row of rows) {
+         const followupMessage = "Hey, did you get a chance to check out the link?";
+         await sendDirectMessage(row.instagram_username, followupMessage, env);
+         
+         const updateQuery = `
+           UPDATE lead_subscribers 
+           SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{followup_sent}', '"true"'::jsonb) 
+           WHERE instagram_username = $1
+         `;
+         await fetch(neonHttpUrl, {
+           method: "POST",
+           headers: { "Content-Type": "application/json", Authorization: `Bearer ${pgUrl.password}` },
+           body: JSON.stringify({ query: updateQuery, params: [row.instagram_username] })
+         });
+      }
+    } catch (err) {
+      console.error("Scheduled task failed:", err);
+    }
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const baseHeaders = { ...SECURITY_HEADERS };
@@ -222,12 +264,63 @@ async function handleEvent(request, env, ctx) {
 
     const messaging = Array.isArray(entry.messaging) ? entry.messaging : [];
     for (const msg of messaging) {
-      // Check for human handoff (is_echo means sent from page to user)
       if (msg.message && msg.message.is_echo && msg.recipient && msg.recipient.id) {
          const userId = msg.recipient.id;
          if (env.KOSH_KV) {
             ctx.waitUntil(env.KOSH_KV.put(`pause:${userId}`, "true", { expirationTtl: 3600 }));
             console.log(`Human handoff detected. Paused automation for user ${userId} for 1 hour.`);
+         }
+      } else if ((msg.message || msg.postback) && !(msg.message && msg.message.is_echo) && msg.sender && msg.sender.id) {
+         // Incoming DM from User
+         const text = (msg.message && msg.message.text) || "";
+         const payload = (msg.postback && msg.postback.payload) || (msg.message && msg.message.quick_reply && msg.message.quick_reply.payload);
+         const senderId = msg.sender.id;
+
+         if (payload && payload.startsWith("FOLLOW_VERIFIED_")) {
+            const campaignId = payload.replace("FOLLOW_VERIFIED_", "");
+            ctx.waitUntil((async () => {
+               if (!env.DATABASE_URL) return;
+               try {
+                 const pgUrl = new URL(env.DATABASE_URL);
+                 const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
+                 const q = `SELECT reply_template FROM automation_campaigns WHERE id = $1 LIMIT 1`;
+                 const res = await fetch(neonHttpUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${pgUrl.password}` },
+                    body: JSON.stringify({ query: q, params: [campaignId] })
+                 });
+                 if (res.ok) {
+                    const data = await res.json();
+                    if (data.rows && data.rows.length > 0) {
+                       const template = data.rows[0].reply_template;
+                       const finalMessage = renderTemplate(template, { username: "there", keyword: "any" });
+                       await sendDirectMessage(senderId, finalMessage, env);
+                    }
+                 }
+               } catch(e) {
+                 console.error("Failed to process follow verified postback", e);
+               }
+            })());
+         }
+
+         const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+         if (emailMatch && env.DATABASE_URL) {
+            const email = emailMatch[0];
+            ctx.waitUntil((async () => {
+              try {
+                const pgUrl = new URL(env.DATABASE_URL);
+                const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
+                const updateQuery = `UPDATE lead_subscribers SET captured_email = $1 WHERE instagram_username = $2`;
+                await fetch(neonHttpUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${pgUrl.password}` },
+                  body: JSON.stringify({ query: updateQuery, params: [email, String(senderId)] })
+                });
+                console.log(`Captured email ${email} for user ${senderId}`);
+              } catch (e) {
+                console.error("Failed to capture email", e);
+              }
+            })());
          }
       }
     }
@@ -339,7 +432,54 @@ async function handleEvent(request, env, ctx) {
          }
       }
 
-      await sendPrivateReply(commentId, finalMessage, env);
+      const requireFollow = resolvedCampaign && resolvedCampaign.settings && resolvedCampaign.settings.requireFollow;
+
+      // Save lead to DB before sending DM
+      if (env.DATABASE_URL && fromId) {
+         ctx.waitUntil(saveLead(env.DATABASE_URL, fromId, resolvedCampaign ? resolvedCampaign.name : "global"));
+      }
+
+      if (requireFollow && fromId) {
+         const profileUrl = "https://instagram.com"; // Adjust if you have a specific profile URL
+         const messageObj = {
+            attachment: {
+               type: "template",
+               payload: {
+                  template_type: "generic",
+                  elements: [{
+                     title: "Action Required",
+                     subtitle: `Hey ${username}! 🚀 To get the link, please make sure you follow me first!`,
+                     buttons: [
+                        {
+                           type: "web_url",
+                           url: profileUrl,
+                           title: "Visit Profile"
+                        },
+                        {
+                           type: "postback",
+                           title: "I'm following ✅",
+                           payload: `FOLLOW_VERIFIED_${effectiveCampaignId}`
+                        }
+                     ]
+                  }]
+               }
+            }
+         };
+         // We can use the existing sendDirectMessage if we tweak it to support object payloads, 
+         // but let's just make a structured call inline or modify sendDirectMessage.
+         const version = env.GRAPH_VERSION || "v18.0";
+         const endpoint = `https://graph.facebook.com/${version}/me/messages`;
+         if (env.IG_ACCESS_TOKEN) {
+             await fetch(endpoint, {
+               method: "POST",
+               headers: { "content-type": "application/json", authorization: `Bearer ${env.IG_ACCESS_TOKEN}` },
+               body: JSON.stringify({ recipient: { id: fromId }, message: messageObj }),
+             }).catch(err => console.error(err));
+         }
+      } else {
+         await sendPrivateReply(commentId, finalMessage, env);
+      }
+
       await logAnalyticsEvent(env, ctx, {
         event: "ig.dm.sent",
         commentId,
@@ -369,7 +509,7 @@ async function findCampaignForMedia(databaseUrl, mediaId) {
     const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
 
     const query = `
-      SELECT id, name, trigger_keywords, reply_template, match_mode
+      SELECT id, name, trigger_keywords, reply_template, match_mode, settings
       FROM automation_campaigns
       WHERE reel_media_id = $1
         AND is_active = TRUE
@@ -644,6 +784,44 @@ async function sendPrivateReply(commentId, message, env) {
       `Network error sending DM for comment ${commentId}:`,
       err && err.stack ? err.stack : err,
     );
+  }
+}
+
+async function sendDirectMessage(recipientId, message, env) {
+  const version = env.GRAPH_VERSION || DEFAULTS.GRAPH_VERSION;
+  const endpoint = `https://graph.facebook.com/${version}/me/messages`;
+  if (!env.IG_ACCESS_TOKEN) return;
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${env.IG_ACCESS_TOKEN}` },
+      body: JSON.stringify({ recipient: { id: recipientId }, message: { text: message } }),
+    });
+    const body = await res.text();
+    if (!res.ok) console.error(`Send message failed for ${recipientId}:`, body);
+  } catch (err) {
+    console.error(`Network error sending direct message:`, err);
+  }
+}
+
+async function saveLead(databaseUrl, fromId, campaignName) {
+  try {
+    const pgUrl = new URL(databaseUrl);
+    const neonHttpUrl = `https://${pgUrl.hostname}/sql`;
+    const query = `
+      INSERT INTO lead_subscribers (instagram_username, source_campaign, engagement_count, last_engaged_at)
+      VALUES ($1, $2, 1, NOW())
+      ON CONFLICT (instagram_username) DO UPDATE 
+      SET engagement_count = lead_subscribers.engagement_count + 1,
+          last_engaged_at = NOW()
+    `;
+    await fetch(neonHttpUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${pgUrl.password}` },
+      body: JSON.stringify({ query, params: [String(fromId), campaignName] })
+    });
+  } catch (err) {
+    console.error("Failed to save lead:", err);
   }
 }
 

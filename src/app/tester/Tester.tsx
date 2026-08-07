@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 type Campaign = {
   id: number;
@@ -12,6 +13,7 @@ type Campaign = {
   reelUrl: string | null;
   reelMediaId: string | null;
   totalDmsSent: number;
+  settings?: { requireFollow?: boolean };
   createdAt: string;
 };
 
@@ -71,6 +73,7 @@ export default function Tester() {
   const [cMatchMode, setCMatchMode] = useState<"partial" | "word" | "any">("partial");
   const [cReelUrl, setCReelUrl] = useState("");
   const [cReelMediaId, setCReelMediaId] = useState("");
+  const [cRequireFollow, setCRequireFollow] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Search / Filter
@@ -94,12 +97,14 @@ export default function Tester() {
   const [editName, setEditName] = useState("");
   const [editKeywords, setEditKeywords] = useState("");
   const [editTemplate, setEditTemplate] = useState("");
+  const [editRequireFollow, setEditRequireFollow] = useState(false);
 
   function startEdit(c: Campaign) {
     setEditingId(c.id);
     setEditName(c.name);
     setEditKeywords(c.triggerKeywords);
     setEditTemplate(c.replyTemplate);
+    setEditRequireFollow(c.settings?.requireFollow ?? false);
   }
 
   async function handleToggleActive(c: Campaign) {
@@ -148,6 +153,7 @@ export default function Tester() {
           name: editName,
           triggerKeywords: editKeywords,
           replyTemplate: editTemplate,
+          requireFollow: editRequireFollow,
         }),
       });
       setEditingId(null);
@@ -167,6 +173,8 @@ export default function Tester() {
   const [stSaving, setStSaving] = useState(false);
 
   // Leads State
+  type ChartData = { name: string; leads: number };
+  const [chartData, setChartData] = useState<ChartData[]>([]);
   const [leads, setLeads] = useState<LeadSubscriber[]>([]);
   const [leadSearch, setLeadSearch] = useState("");
 
@@ -235,6 +243,16 @@ export default function Tester() {
     }
   }
 
+  async function loadAnalytics() {
+    try {
+      const r = await fetch("/api/analytics", { headers: getAuthHeaders() });
+      if (r.ok) {
+        const j = await r.json();
+        setChartData(j.data || []);
+      }
+    } catch { /* noop */ }
+  }
+
   useEffect(() => {
     loadCampaigns();
     loadExtraFeatures();
@@ -242,6 +260,7 @@ export default function Tester() {
     if (typeof window !== "undefined" && localStorage.getItem("autoflow_admin_token")) {
       setIsAuthenticated(true);
       loadAiSettings();
+      loadAnalytics();
     }
   }, []);
 
@@ -261,11 +280,13 @@ export default function Tester() {
           matchMode: cMatchMode,
           reelUrl: cReelUrl.trim() || null,
           reelMediaId: cReelMediaId.trim() || null,
+          requireFollow: cRequireFollow,
         }),
       });
       setCName("");
       setCReelUrl("");
       setCReelMediaId("");
+      setCRequireFollow(false);
       loadCampaigns();
     } finally {
       setSaving(false);
@@ -380,15 +401,7 @@ export default function Tester() {
     }
   }
 
-  useEffect(() => {
-    loadCampaigns();
-    loadExtraFeatures();
-    loadHistory();
-    if (typeof window !== "undefined" && localStorage.getItem("autoflow_admin_token")) {
-      setIsAuthenticated(true);
-      loadAiSettings();
-    }
-  }, []);
+
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -613,6 +626,26 @@ export default function Tester() {
                 </p>
               </div>
 
+              {/* Require Follow First Toggle */}
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer mt-4 p-3 rounded-xl border border-slate-700 bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={cRequireFollow}
+                      onChange={(e) => setCRequireFollow(e.target.checked)}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${cRequireFollow ? 'bg-fuchsia-500' : 'bg-slate-700'}`}></div>
+                    <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${cRequireFollow ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Require Follow First (Soft Gate)</div>
+                    <div className="text-[11px] text-slate-400">Users will get "Oops! haven't followed me yet 👀" message before receiving the link.</div>
+                  </div>
+                </label>
+              </div>
+
 
 
               <div>
@@ -761,6 +794,12 @@ export default function Tester() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Edit DM Message</label>
                           <input type="text" value={editTemplate} onChange={(e) => setEditTemplate(e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white" />
                         </div>
+                        <div>
+                          <label className="flex items-center gap-2 cursor-pointer mt-1">
+                            <input type="checkbox" checked={editRequireFollow} onChange={(e) => setEditRequireFollow(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-fuchsia-500 focus:ring-fuchsia-500 focus:ring-offset-slate-950" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Require Follow First</span>
+                          </label>
+                        </div>
                         <div className="flex items-center gap-2">
                           <button onClick={() => handleSaveEdit(c.id)} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-500">Save Changes</button>
                           <button onClick={() => setEditingId(null)} className="rounded-lg bg-slate-800 px-3 py-1 text-xs text-slate-300 hover:text-white">Cancel</button>
@@ -774,6 +813,9 @@ export default function Tester() {
                               <h4 className="text-sm font-bold text-white truncate">{c.name}</h4>
                               {c.matchMode === "any" && (
                                 <span className="rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 px-2 py-0.5 text-[10px] font-bold text-fuchsia-300">ANY COMMENT</span>
+                              )}
+                              {c.settings?.requireFollow && (
+                                <span className="rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold text-orange-300">🔒 FOLLOW GATE</span>
                               )}
                               <span className={`h-2 w-2 rounded-full flex-shrink-0 ${c.isActive ? "bg-emerald-400" : "bg-slate-600"}`} title={c.isActive ? "Active" : "Paused"} />
                             </div>
@@ -966,6 +1008,31 @@ export default function Tester() {
               placeholder="🔍 Search by username..."
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
             />
+          </div>
+
+          {/* Visual Analytics Chart */}
+          <div className="mt-6 mb-6">
+            <h4 className="text-sm font-bold text-slate-300 mb-3">📈 Leads Over Last 7 Days</h4>
+            <div className="h-64 w-full rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
+                    itemStyle={{ color: '#10b981', fontWeight: 'bold' }}
+                  />
+                  <Area type="monotone" dataKey="leads" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           <div className="mt-4 overflow-x-auto">

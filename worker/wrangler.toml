@@ -20,3 +20,7 @@ RATE_LIMIT_MAX_REQUESTS = 120 # per source IP per window
 # [[kv_namespaces]]
 # binding = "KOSH_KV"
 # id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[triggers]
+crons = ["0 * * * *"]
+
