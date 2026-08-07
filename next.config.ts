@@ -42,10 +42,8 @@ const nextConfig: NextConfig = {
     ];
   },
   // Ensure the drizzle migration files are bundled into the serverless function
-  experimental: {
-    outputFileTracingIncludes: {
-      '/api/**/*': ['./drizzle/**/*'],
-    },
+  outputFileTracingIncludes: {
+    '/api/**/*': ['./drizzle/**/*'],
   },
 };
 

@@ -3,14 +3,13 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 import path from "path";
-import { verifyAuth } from "@/lib/auth";
+import { verifyAdminToken } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
     // 1. Verify Admin Token
-    const authError = await verifyAuth(req);
-    if (authError) {
-      return authError;
+    if (!verifyAdminToken(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Setup Neon DB Connection

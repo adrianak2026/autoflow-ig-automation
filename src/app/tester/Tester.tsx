@@ -1273,7 +1273,7 @@ export default function Tester() {
                   const res = await fetch("/api/setup-db", {
                     method: "POST",
                     headers: {
-                      "Authorization": `Bearer ${token}`
+                      "Authorization": `Bearer ${authPass}`
                     }
                   });
                   const data = await res.json();
