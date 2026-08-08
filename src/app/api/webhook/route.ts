@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+// @ts-ignore
 import workerHandler from "../../../../worker/index.js";
 
 // Bypass Next.js default body parsing since the worker needs raw text for signature verification
