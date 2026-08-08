@@ -1,29 +1,22 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { db } from "@/db";
-import { sql } from "drizzle-orm";
 import Tester from "./tester/Tester";
-
-export const dynamic = "force-dynamic";
-
-function readProjectFile(rel: string) {
-  try {
-    return readFileSync(path.join(process.cwd(), rel), "utf8");
-  } catch {
-    return "// (file not found)";
-  }
-}
 
 export default async function HomePage() {
   let dbStatus = "Connected (Neon Postgres)";
-  try {
-    await db.execute(sql`select 1`);
-  } catch {
-    dbStatus = "Offline / Connection Error";
+  if (!process.env.DATABASE_URL) {
+    dbStatus = "Not Configured";
+  } else {
+    try {
+      const { db } = await import("@/db");
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`select 1`);
+    } catch {
+      dbStatus = "Offline / Connection Error";
+    }
   }
 
-  const workerCode = readProjectFile("worker/index.js");
-  const wranglerToml = readProjectFile("wrangler.jsonc");
+  // Filesystem not available in Cloudflare Workers
+  const workerCode = "// worker/index.js — deployed via Cloudflare Workers CLI";
+  const wranglerToml = "// wrangler.jsonc — see project root";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#050510] to-black text-slate-100 selection:bg-fuchsia-500/30 selection:text-white px-4 py-8 sm:px-8 sm:py-12 relative overflow-hidden">
