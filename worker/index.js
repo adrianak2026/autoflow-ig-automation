@@ -345,13 +345,13 @@ async function handleEvent(request, env, ctx) {
 
       if (!commentId || !text) {
         console.log("Skipping change without comment id/text.");
-        continue;
+        return;
       }
 
       // Self-comment filter
       if (env.IG_PAGE_ID && fromId && String(fromId) === String(env.IG_PAGE_ID)) {
         console.log("Skipping self-comment from page:", fromId);
-        continue;
+        return;
       }
 
       // Spam Protection Check (Max 3 DMs per user per Reel per 24 hours)
@@ -362,7 +362,7 @@ async function handleEvent(request, env, ctx) {
          currentSpamCount = Number(spamCountStr) || 0;
          if (currentSpamCount >= 3) {
             console.log(`User ${fromId} reached max DM limit (3) for reel ${commentMediaId}. Skipping comment to save limits.`);
-            continue;
+            return;
          }
       }
 
@@ -371,7 +371,7 @@ async function handleEvent(request, env, ctx) {
          const isPaused = await env.KOSH_KV.get(`pause:${fromId}`);
          if (isPaused) {
            console.log(`Automation paused for user ${fromId} (human handoff). Skipping comment.`);
-           continue;
+           return;
          }
       }
 
@@ -413,7 +413,7 @@ async function handleEvent(request, env, ctx) {
 
       if (!keyword) {
         console.log(`No keyword match for comment ${commentId}: "${text}"`);
-        continue;
+        return;
       }
 
       // Increment Spam Protection Counter since we are going to send a DM
