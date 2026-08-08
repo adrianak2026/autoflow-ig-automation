@@ -139,7 +139,7 @@ export default {
       });
     }
 
-    if (url.pathname !== "/webhook") {
+    if (url.pathname !== "/webhook" && url.pathname !== "/api/webhook") {
       return respondWith(404, "Not Found", {
         "content-type": "text/plain",
         ...baseHeaders,
