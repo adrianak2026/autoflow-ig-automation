@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, ensureNeonDbMigrated } from "@/db";
 import { testRuns } from "@/db/schema";
 import { desc } from "drizzle-orm";
+import { getEnv } from "@/lib/env";
 import { matchKeyword, renderTemplate, type MatchMode } from "@/lib/matcher";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,6 @@ const MAX_USERNAME_LEN = 100;
 const MAX_TEMPLATE_LEN = 2000;
 
 export async function POST(req: Request) {
-  await ensureNeonDbMigrated();
   let body: {
     commentText?: string;
     username?: string;
@@ -46,7 +46,8 @@ export async function POST(req: Request) {
     : null;
 
   try {
-    if (process.env.DATABASE_URL) {
+    if (getEnv("DATABASE_URL")) {
+      await ensureNeonDbMigrated();
       await db.insert(testRuns).values({
         commentText,
         username,

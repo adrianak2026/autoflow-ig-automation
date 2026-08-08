@@ -4,6 +4,7 @@ import { neon } from "@neondatabase/serverless";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 import path from "path";
 import { verifyAdminToken } from "@/lib/auth";
+import { getEnv } from "@/lib/env";
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Setup Neon DB Connection
-    const databaseUrl = process.env.DATABASE_URL;
+    const databaseUrl = getEnv("DATABASE_URL");
     if (!databaseUrl) {
       return NextResponse.json(
         { error: "DATABASE_URL is not set" },

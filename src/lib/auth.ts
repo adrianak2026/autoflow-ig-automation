@@ -18,11 +18,13 @@ export function checkRateLimit(ip: string): boolean {
   return true; // Allowed
 }
 
-export function verifyAdminToken(req: Request): boolean {
-  const authHeader = req.headers.get("authorization");
+import { getEnv } from "./env";
+
+export async function verifyAdminToken(req: Request): Promise<boolean> {
+  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return false;
   const token = authHeader.slice(7);
-  const expectedToken = process.env.ADMIN_SECRET_TOKEN;
+  const expectedToken = getEnv("ADMIN_SECRET_TOKEN");
   // Fail-closed: if token not configured, deny all
   if (!expectedToken) return false;
   // Constant-time compare to prevent timing attacks

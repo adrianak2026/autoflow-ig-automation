@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { systemSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getEnv } from "@/lib/env";
 import { verifyAdminToken, unauthorizedResponse } from "@/lib/auth";
 import { encryptSymmetric, decryptSymmetric } from "@/lib/crypto";
 
@@ -28,8 +29,9 @@ export async function GET(req: Request) {
     }
 
     const value = setting.valueJson as any;
-    if (value && value.apiKey && process.env.ADMIN_SECRET_TOKEN) {
-      value.apiKey = await decryptSymmetric(value.apiKey, process.env.ADMIN_SECRET_TOKEN);
+    const secretToken = getEnv("ADMIN_SECRET_TOKEN");
+    if (value && value.apiKey && secretToken) {
+      value.apiKey = await decryptSymmetric(value.apiKey, secretToken);
     }
 
     return NextResponse.json(value);
@@ -47,8 +49,9 @@ export async function POST(req: Request) {
     const { providerName, endpointUrl, modelName, apiKey, isEnabled } = body;
 
     let finalApiKey = String(apiKey || "");
-    if (finalApiKey && process.env.ADMIN_SECRET_TOKEN) {
-      finalApiKey = await encryptSymmetric(finalApiKey, process.env.ADMIN_SECRET_TOKEN);
+    const secretToken = getEnv("ADMIN_SECRET_TOKEN");
+    if (finalApiKey && secretToken) {
+      finalApiKey = await encryptSymmetric(finalApiKey, secretToken);
     }
 
     const payload = {

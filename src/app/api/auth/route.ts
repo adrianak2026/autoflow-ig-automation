@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, tooManyRequestsResponse } from "@/lib/auth";
+import { getEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
     // --- SECURITY: Fail-closed if env secrets not configured ---
-    const expectedUser = process.env.ADMIN_USER;
-    const expectedPass = process.env.ADMIN_PASS;
-    const secretToken = process.env.ADMIN_SECRET_TOKEN;
+    const expectedUser = getEnv("ADMIN_USER");
+    const expectedPass = getEnv("ADMIN_PASS");
+    const secretToken = getEnv("ADMIN_SECRET_TOKEN");
 
     if (!expectedUser || !expectedPass || !secretToken) {
       console.error("[AUTH] Admin credentials or ADMIN_SECRET_TOKEN not set in environment.");

@@ -1,8 +1,9 @@
 import Tester from "./tester/Tester";
+import { getEnv } from "@/lib/env";
 
 export default async function HomePage() {
   let dbStatus = "Connected (Neon Postgres)";
-  if (!process.env.DATABASE_URL) {
+  if (!getEnv("DATABASE_URL")) {
     dbStatus = "Not Configured";
   } else {
     try {

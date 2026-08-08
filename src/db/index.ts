@@ -1,7 +1,10 @@
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as schema from "./schema";
+import { migrate } from "drizzle-orm/neon-http/migrator";
+import { getEnv } from "@/lib/env";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = getEnv("DATABASE_URL");
 if (!databaseUrl) {
   console.error("[DB] DATABASE_URL environment variable is not set!");
 }
