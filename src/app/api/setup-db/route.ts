@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import { verifyAdminToken } from "@/lib/auth";
 import { getEnv } from "@/lib/env";
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    // 1. Verify Admin Token (Temporarily disabled for setup)
-    // if (!verifyAdminToken(req)) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
-
+    // 1. Verify Admin Token
+    if (!verifyAdminToken(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     // 2. Setup Neon DB Connection
     const databaseUrl = getEnv("DATABASE_URL");
     if (!databaseUrl) {
