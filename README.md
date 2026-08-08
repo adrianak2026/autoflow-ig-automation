@@ -308,61 +308,43 @@ system_settings              ← AI configuration and global settings
 
 ---
 
-## Setup Guide (5 Environment Variables)
+## 🔐 Setup Guide (Environment Variables)
 
-### 1. DATABASE_URL — Neon Postgres Connection
+When hosting on Cloudflare, your project has **two parts**, and each needs its own secrets securely added. If using the Cloudflare Dashboard, go to **Settings → Variables → Environment Variables** and add the following keys with their values. *(Remember to click the **"Encrypt"** button for all of them!)*
 
-> **Where to find it:** https://console.neon.tech → Project → Connection Details
+### Part 1: Cloudflare Worker (Webhook Bot)
+Add these to your `autoflow-ig-worker` project:
 
-```
-postgresql://user:pass@ep-xyz.us-east-2.aws.neon.tech/neondb?sslmode=require
-```
+1. **`IG_ACCESS_TOKEN`** 
+   - **What it is:** Your Instagram Graph API Token (from Graph API Explorer).
+   - **Example:** `EAABbX...your_long_lived_token`
+2. **`WEBHOOK_APP_SECRET`**
+   - **What it is:** Meta App Secret (From App Dashboard → App Settings → Basic).
+   - **Example:** `a1b2c3d4e5f67890123456789abcdef0`
+3. **`VERIFY_TOKEN`**
+   - **What it is:** A custom password Meta uses to verify your webhook URL.
+   - **Example:** `SmartDM123`
+4. **`IG_PAGE_ID`**
+   - **What it is:** Your numeric Instagram Page ID (prevents the bot from replying to your own comments).
+   - **Example:** `17841400000000000`
+5. **`DATABASE_URL`**
+   - **What it is:** Neon Postgres Connection string (For per-reel campaign lookups).
+   - **Example:** `postgresql://user:pass@ep-xyz.us-east-2.aws.neon.tech/neondb?sslmode=require`
 
-> Important: Set this secret **in your Cloudflare Worker as well** — the worker queries Neon DB for per-reel campaign lookups.
->
-> ```bash
-> wrangler secret put DATABASE_URL
-> ```
+### Part 2: Cloudflare Pages / Vercel (Next.js Dashboard)
+When you deploy the Admin Dashboard, add these to your Frontend project:
 
-### 2. VERIFY_TOKEN — Webhook Secret (You create this)
-
-> Meta uses this token to verify your webhook URL.
-
-```
-autoflow_webhook_secret_2026
-```
-
-### 3. WEBHOOK_APP_SECRET — Meta HMAC Key
-
-> **Where to find it:** developers.facebook.com/apps → App Settings → Basic → App Secret
-
-```
-a1b2c3d4e5f67890123456789abcdef0
-```
-
-### 4. IG_ACCESS_TOKEN — Instagram Graph API Token
-
-> **Where to find it:** developers.facebook.com/tools/explorer
->
-> Required Permissions:
-> - instagram_basic
-> - instagram_manage_comments
-> - instagram_manage_messages
-> - pages_manage_metadata
-
-```
-EAABb...your_long_lived_token
-```
-
-### 5. Admin Credentials (Dashboard Security)
-
-Set these as Cloudflare Worker secrets:
-
-```bash
-wrangler secret put ADMIN_USER         # Your admin username
-wrangler secret put ADMIN_PASS         # Your admin password
-wrangler secret put ADMIN_SECRET_TOKEN # Random 32+ char secret (openssl rand -hex 32)
-```
+1. **`DATABASE_URL`**
+   - **What it is:** Same Neon DB connection string as above.
+2. **`ADMIN_USER`**
+   - **What it is:** The username you will use to log into your AutoFlow IG dashboard.
+   - **Example:** `admin`
+3. **`ADMIN_PASS`**
+   - **What it is:** The password you will use to log into the dashboard.
+   - **Example:** `SuperSecretPass123`
+4. **`ADMIN_SECRET_TOKEN`**
+   - **What it is:** A master encryption key for securing OpenAI/LLM API keys in your DB.
+   - **Example:** `my_super_secret_encryption_key_999`
 
 ---
 
