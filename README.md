@@ -1,5 +1,8 @@
 # 🤖 AutoFlow IG — Instagram DM Automation SaaS Engine
 
+> [!WARNING]
+> **PROJECT STATUS: PAUSED (August 2026)**
+> This project is currently on hold. While the code, deployment, and database are 100% functional, the Meta/Facebook Graph API setup process (specifically subscribing Pages to Webhooks and generating correct Access Tokens via OAuth) proved to be overly convoluted, undocumented, and buggy on Meta's end. The project will remain paused until Meta simplifies their Developer dashboard UI for Page Subscriptions.
 <div align="center">
 
 **Upload a Reel → Set a keyword/emoji → Automatically send a Private DM to commenters**
