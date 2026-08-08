@@ -18,8 +18,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const sql = neon(databaseUrl);
-    // const db = drizzle(sql); (Using proxy db instead to be consistent if needed, or just import runDatabaseInit which uses Proxy)
+    // `runDatabaseInit` will use the lazy-loaded Proxy db connection automatically!
     
     // 3. Run Migrations manually (bypassing fs-based migrate)
     const { runDatabaseInit } = await import("@/db/init");
