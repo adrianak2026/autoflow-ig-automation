@@ -1,8 +1,4 @@
 import { NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
-import { migrate } from "drizzle-orm/neon-http/migrator";
-import path from "path";
 import { verifyAdminToken } from "@/lib/auth";
 import { getEnv } from "@/lib/env";
 
@@ -23,13 +19,11 @@ export async function POST(req: Request) {
     }
 
     const sql = neon(databaseUrl);
-    const db = drizzle(sql);
-
-    // 3. Run Migrations
-    // Note: next.config.ts has outputFileTracingIncludes to bundle this folder
-    const migrationsFolder = path.join(process.cwd(), "drizzle");
-
-    await migrate(db, { migrationsFolder });
+    // const db = drizzle(sql); (Using proxy db instead to be consistent if needed, or just import runDatabaseInit which uses Proxy)
+    
+    // 3. Run Migrations manually (bypassing fs-based migrate)
+    const { runDatabaseInit } = await import("@/db/init");
+    await runDatabaseInit();
 
     return NextResponse.json({
       success: true,
