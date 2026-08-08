@@ -9,7 +9,8 @@ if (!databaseUrl) {
   console.error("[DB] DATABASE_URL environment variable is not set!");
 }
 
-const sql = neon(databaseUrl!);
+// Provide a dummy connection string during build time when secrets aren't available
+const sql = neon(databaseUrl || "postgres://dummy:dummy@dummy/dummy");
 
 export const db = drizzle({ client: sql });
 
