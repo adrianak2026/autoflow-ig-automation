@@ -70,7 +70,7 @@ const DEFAULTS = {
   REPLY_TEMPLATE:
     "Hey {username}, here is your requested link: https://koshverse.in",
   MATCH_MODE: "partial",
-  GRAPH_VERSION: "v19.0",
+  GRAPH_VERSION: "v26.0",
   RATE_LIMIT_WINDOW_MS: 60_000,
   RATE_LIMIT_MAX_REQUESTS: 120,
   ANALYTICS_TTL_SECONDS: 60 * 60 * 24 * 7, // 7 days

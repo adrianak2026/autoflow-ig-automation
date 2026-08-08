@@ -36,7 +36,7 @@ export default async function HomePage() {
               Engine Online · {dbStatus}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-1 text-xs font-semibold text-indigo-300 backdrop-blur">
-              Meta Graph API v19.0
+              Meta Graph API v26.0
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-3.5 py-1 text-xs font-semibold text-fuchsia-300 backdrop-blur">
               Sub-50ms Response
@@ -105,7 +105,7 @@ export default async function HomePage() {
               <p className="text-sm text-slate-400">Built for high-converting Instagram creators and business owners.</p>
             </div>
             <span className="rounded-full bg-fuchsia-500/10 border border-fuchsia-500/30 px-3.5 py-1 text-xs font-semibold text-fuchsia-300">
-              Meta Graph API v19.0 + AI Intent Ready
+              Meta Graph API v26.0 + AI Intent Ready
             </span>
           </div>
 

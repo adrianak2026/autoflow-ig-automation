@@ -411,7 +411,7 @@ For per-reel matching, it is necessary to input the Instagram Media ID (numeric)
 ### Method 2 — API Call
 
 ```bash
-curl "https://graph.facebook.com/v19.0/me/media?fields=id,caption&access_token=YOUR_TOKEN"
+curl "https://graph.facebook.com/v26.0/me/media?fields=id,caption&access_token=YOUR_TOKEN"
 ```
 
 Response:
