@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+// edge runtime removed - not supported by @opennextjs/cloudflare
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 

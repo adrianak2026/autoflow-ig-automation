@@ -6,9 +6,9 @@ import Tester from "./tester/Tester";
 
 export const dynamic = "force-dynamic";
 
-function readWorkerFile(rel: string) {
+function readProjectFile(rel: string) {
   try {
-    return readFileSync(path.join(process.cwd(), "worker", rel), "utf8");
+    return readFileSync(path.join(process.cwd(), rel), "utf8");
   } catch {
     return "// (file not found)";
   }
@@ -22,8 +22,8 @@ export default async function HomePage() {
     dbStatus = "Offline / Connection Error";
   }
 
-  const workerCode = readWorkerFile("index.js");
-  const wranglerToml = readWorkerFile("wrangler.toml");
+  const workerCode = readProjectFile("worker/index.js");
+  const wranglerToml = readProjectFile("wrangler.jsonc");
 
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#050510] to-black text-slate-100 selection:bg-fuchsia-500/30 selection:text-white px-4 py-8 sm:px-8 sm:py-12 relative overflow-hidden">
@@ -186,7 +186,7 @@ export default async function HomePage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">`worker/wrangler.toml`</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">`wrangler.jsonc`</p>
               <pre className="max-h-96 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/80 p-4 font-mono text-xs text-slate-300">
                 {wranglerToml}
               </pre>
